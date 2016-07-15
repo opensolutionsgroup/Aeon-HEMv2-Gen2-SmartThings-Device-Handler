@@ -1,7 +1,6 @@
 # Aeon-HEMv2-Gen2-SmartThings-Device-Handler
 
-*Aeon Home Energy Meter v2 Gen2 Basic Edition*
-Version: 0.9b
+*Aeon Home Energy Meter v2 Gen2 Basic Edition* - Version: 0.9b
 
 *Disclaimer*: This WILL NOT work with Aeon's HEM Gen1 or Gen5 (latest version) as is intended to be used for HEMs installed on the typical 200A 240V split-phase US residential systems (Two 120V legs and a neutral - grounded center tap from power transformer outside your house).
  
