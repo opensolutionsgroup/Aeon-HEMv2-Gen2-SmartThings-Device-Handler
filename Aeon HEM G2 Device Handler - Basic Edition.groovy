@@ -1,25 +1,25 @@
 /**
- *  Aeon Home Energy Meter v2 Gen2 Basic Edition
+ *	Aeon Home Energy Meter v2 Gen2 Basic Edition
  *	Version: 0.9b
  *
  *	Disclaimer: This WILL NOT work with Aeon's HEM Gen1 or Gen5 (latest version) as is intended to be used for HEMs
  *				installed on the typical 200A 240V split-phase US residential systems (Two 120V legs and a neutral -
  *				grounded center tap from power transformer outside your house).
  *
- *  Copyright 2016 Alex M. Ruffell
+ *	Copyright 2016 Alex M. Ruffell
  *
- *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
- *  in compliance with the License. You may obtain a copy of the License at:
+ *	Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ *	in compliance with the License. You may obtain a copy of the License at:
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *			http://www.apache.org/licenses/LICENSE-2.0
  *
- *  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed
- *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
- *  for the specific language governing permissions and limitations under the License.
+ *	Unless required by applicable law or agreed to in writing, software distributed under the License is distributed
+ *	on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
+ *	for the specific language governing permissions and limitations under the License.
  *
- *  Author: Alex M. Ruffell
+ *	Author: Alex M. Ruffell
  *
- *  Note:	This device handler is based off of Smartthings' "Aeon Smart Meter" device handler sample code but mostly on
+ *	Note:	This device handler is based off of Smartthings' "Aeon Smart Meter" device handler sample code but mostly on
  *			a device handler written by Barry A. Burke (Thank you!!). I have made very significant changes to his code,
  *			stripped stuff, and added other stuff but the overall structure likely remains (for now at least).
  *
@@ -52,8 +52,8 @@
  *			- Verify W/A measurements using clamp meter on main panel. Add configurable +- offset to measured values
  *
  *
- *  History:
- * 		
+ *	History:
+ * 
  *	2016-07-15:	- Basic functionality seems to work but lots more work is necessary
  *
  *	Disclaimer 2:	I am NOT a developer. I learn as I go so please do NOT rely on this for anything critical. Use it and
@@ -69,54 +69,54 @@ metadata {
 		category: 	"Green Living",
 		author: 	"Alex M. Ruffell",
         
-        // ************************************************************************
-    	// * Icons - for now random icons I found until I find a better fit
-    	// ************************************************************************
+		// ************************************************************************
+		// * Icons - for now random icons I found until I find a better fit
+		// ************************************************************************
     
-    	iconUrl: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience.png",
+		iconUrl: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience.png",
 		iconX2Url: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience@2x.png",
 		iconX3Url: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience@2x.png"
 	)
     
 	{
-    	capability "Energy Meter"
+		capability "Energy Meter"
 		capability "Power Meter"
 		capability "Configuration"
 		capability "Sensor"
-        capability "Refresh"
-        //capability "Polling"
+		capability "Refresh"
+		//capability "Polling"
 
 		attribute "energy",			"number"		// Sum of energy used on both legs, total energy used by house (defined by capability)
-        attribute "power",			"number"		// Sum of power from both legs, total power used by house (defined by capability)
-        attribute "amps",			"number"		// Sum of amperage from both legs, total power used by house (defined by capability)
-        attribute "volts",			"number"		// Volts of both legs, total power used by house (defined by capability)
+		attribute "power",			"number"		// Sum of power from both legs, total power used by house (defined by capability)
+		attribute "amps",			"number"		// Sum of amperage from both legs, total power used by house (defined by capability)
+		attribute "volts",			"number"		// Volts of both legs, total power used by house (defined by capability)
         
 		attribute "E_L1_L2",		"string"		// Sum of energy (kWh) used on both legs, total energy used by house
-        attribute "E_L1",			"string"		// Energy from leg 1
-        attribute "E_L2",			"string"		// Energy from leg 2
+		attribute "E_L1",			"string"		// Energy from leg 1
+		attribute "E_L2",			"string"		// Energy from leg 2
 
-        attribute "W_L1_L2",		"string"		// Sum of power from both legs, total power used by house
-        attribute "W_L1",			"string"		// Power from leg 1
-        attribute "W_L2",			"string"		// Power from leg 2
-        
-        attribute "V_L1_L2",		"string"		// Volts for leg 1 and 2 - voltage on L1 and L2 should always be the same, if not there is an issue!
-        attribute "V_L1",			"string"		// Voltage on leg 1
-        attribute "V_L2",			"string"		// Voltage on leg 2
-        
-        attribute "A_L1_L2",		"string"		// Sum of amerage used on both legs, total amperage used by house
-        attribute "A_L1",			"string"		// Amperage for leg 1
-        attribute "A_L2",			"string"        // Amperage for leg 2
+		attribute "W_L1_L2",		"string"		// Sum of power from both legs, total power used by house
+		attribute "W_L1",			"string"		// Power from leg 1
+		attribute "W_L2",			"string"		// Power from leg 2
 
-        attribute "resetDate",		"string"		// Date kWh was reset. This helps keep track consumption is sync with power company meter readings
-        
+		attribute "V_L1_L2",		"string"		// Volts for leg 1 and 2 - voltage on L1 and L2 should always be the same, if not there is an issue!
+		attribute "V_L1",			"string"		// Voltage on leg 1
+		attribute "V_L2",			"string"		// Voltage on leg 2
+
+		attribute "A_L1_L2",		"string"		// Sum of amerage used on both legs, total amperage used by house
+		attribute "A_L1",			"string"		// Amperage for leg 1
+		attribute "A_L2",			"string"        // Amperage for leg 2
+
+		attribute "resetDate",		"string"		// Date kWh was reset. This helps keep track consumption is sync with power company meter readings
+
 		command "reset"
-        command "configure"
-        command "refresh"
-        command "resetCtr"
-        //command "poll"
+		command "configure"
+		command "refresh"
+		command "resetCtr"
+		//command "poll"
 
 		// Fingerprint for Aeon HEMv2, Second Generation
-        fingerprint deviceId: "0x3101", inClusters: "0x70,0x32,0x60,0x85,0x56,0x72,0x86"
+		fingerprint deviceId: "0x3101", inClusters: "0x70,0x32,0x60,0x85,0x56,0x72,0x86"
 	}
 
 	// simulator metadata
@@ -131,27 +131,27 @@ metadata {
 		}
 	}
 
-    // ************************************************************************
-    // * Tile Definitions
-    // ************************************************************************
-    
-    // scale set to 2 so tiles can be set to anything between 1 and 6 wide
+	// ************************************************************************
+	// * Tile Definitions
+	// ************************************************************************
+
+	// scale set to 2 so tiles can be set to anything between 1 and 6 wide
 	tiles (scale:2) {
-    
-    // ************************************************************************
-    // * Watts tiles
-    // ************************************************************************
-    
-        valueTile("W_L1_L2", "device.W_L1_L2", width: 2, height: 2) {
+
+	// ************************************************************************
+	// * Watts tiles
+	// ************************************************************************
+
+		valueTile("W_L1_L2", "device.W_L1_L2", width: 2, height: 2) {
 			state (
 				"W_L1_L2", 
-                label:'${currentValue} W', 
-            	foregroundColors:[
-            		[value: 1, color: "#000000"],
-            		[value: 10000, color: "#ffffff"]
-            	], 
-            	//foregroundColor: "#000000",
-                backgroundColors:[
+				label:'${currentValue} W', 
+				foregroundColors:[
+					[value: 1, color: "#000000"],
+					[value: 10000, color: "#ffffff"]
+				], 
+				//foregroundColor: "#000000",
+				backgroundColors:[
 					[value: 0, 		color: "#006600"],	// Dark Green
 					[value: 3000, 	color: "#009900"],	// Lighter Green
 					[value: 6000, 	color: "#00cc00"],	// Light Green
@@ -160,8 +160,8 @@ metadata {
 					[value: 18000, 	color: "#ff6600"],	// Orange
 					[value: 24000, 	color: "#ef221a"]	// Red
 				
-                	/* Original colors, taken from ST examples
-                	[value: 0, 		color: "#153591"],
+					/* Original colors, taken from ST examples
+					[value: 0, 		color: "#153591"],
 					[value: 3000, 	color: "#1e9cbb"],
 					[value: 6000, 	color: "#90d2a7"],
 					[value: 9000, 	color: "#44b621"],
@@ -171,16 +171,16 @@ metadata {
 				]
 			)
 		}
-        valueTile("W_L1", "device.W_L1", width: 3, height: 2) {
-        	state(
-        		"W_L1", 
-                label:'${currentValue} W',
-            	foregroundColors:[
-            		[value: 1, color: "#000000"],
-            		[value: 10000, color: "#ffffff"]
-            	], 
-            	foregroundColor: "#000000",
-                backgroundColors:[
+		valueTile("W_L1", "device.W_L1", width: 3, height: 2) {
+			state(
+				"W_L1", 
+				label:'${currentValue} W',
+				foregroundColors:[
+					[value: 1, color: "#000000"],
+					[value: 10000, color: "#ffffff"]
+				], 
+				foregroundColor: "#000000",
+				backgroundColors:[
 					[value: 0, 		color: "#006600"],	// Dark Green
 					[value: 3000, 	color: "#009900"],	// Lighter Green
 					[value: 6000, 	color: "#00cc00"],	// Light Green
@@ -190,17 +190,17 @@ metadata {
 					[value: 24000, 	color: "#ef221a"]	// Red
 				]
 			)
-        }
-        valueTile("W_L2", "device.W_L2", width: 3, height: 2) {
-        	state(
-        		"W_L2", 
-                label:'${currentValue} W', 
-            	foregroundColors:[
-            		[value: 1, color: "#000000"],
-            		[value: 10000, color: "#ffffff"]
-            	], 
-            	foregroundColor: "#000000",
-                backgroundColors:[
+		}
+		valueTile("W_L2", "device.W_L2", width: 3, height: 2) {
+			state(
+				"W_L2", 
+				label:'${currentValue} W', 
+				foregroundColors:[
+					[value: 1, color: "#000000"],
+					[value: 10000, color: "#ffffff"]
+				], 
+				foregroundColor: "#000000",
+				backgroundColors:[
 					[value: 0, 		color: "#006600"],	// Dark Green
 					[value: 3000, 	color: "#009900"],	// Lighter Green
 					[value: 6000, 	color: "#00cc00"],	// Light Green
@@ -210,12 +210,12 @@ metadata {
 					[value: 24000, 	color: "#ef221a"]	// Red
 				]
 			)
-        }
+		}
 
 	// ************************************************************************
-    // * Energy tiles
-    // ************************************************************************
-    
+	// * Energy tiles
+	// ************************************************************************
+
 		valueTile("resetDate", "device.resetDate", width: 3, height: 1) {
 			state(
 				"resetDate",
@@ -230,53 +230,51 @@ metadata {
 				foregroundColor: "#000000", 
 				backgroundColor: "#ffffff")
 		}
-        valueTile("E_L1", "device.E_L1", width: 3, height: 1) {
-        	state(
-        		"E_L1",
-        		label: '${currentValue} kWh', 
-        		foregroundColor: "#000000", 
-        		backgroundColor: "#ffffff")
-        }        
-        valueTile("E_L2", "device.E_L2", width: 3, height: 1) {
-        	state(
-        		"E_L2",
-        		label: '${currentValue} kWh', 
-        		foregroundColor: "#000000", 
-        		backgroundColor: "#ffffff")
-        }
+		valueTile("E_L1", "device.E_L1", width: 3, height: 1) {
+			state(
+				"E_L1",
+				label: '${currentValue} kWh', 
+				foregroundColor: "#000000", 
+				backgroundColor: "#ffffff")
+		}        
+		valueTile("E_L2", "device.E_L2", width: 3, height: 1) {
+			state(
+				"E_L2",
+				label: '${currentValue} kWh', 
+				foregroundColor: "#000000", 
+				backgroundColor: "#ffffff")
+		}
 
-
-        
 	// ************************************************************************
-    // * Voltage tile - Just one as voltage is the same on both legs
-    // ************************************************************************
+	// * Voltage tile - Just one as voltage is the same on both legs
+	// ************************************************************************
 	
-        valueTile("V_L1_L2", "device.V_L1_L2", width: 2, height: 2) {
-        	state(
-        		"V_L1_L2",
-                label: '${currentValue} V', 
-        		backgroundColors:[
-            		[value: 115.6, 	color: "#ef221a"],
-                	[value: 117.8, 	color: "#ffcc00"],
-                	[value: 120.0, 	color: "#006600"],
-                	[value: 122.2, 	color: "#ffcc00"],
-                	[value: 124.4, 	color: "#ef221a"]
-            	]
-            )
-        }
+		valueTile("V_L1_L2", "device.V_L1_L2", width: 2, height: 2) {
+			state(
+				"V_L1_L2",
+				label: '${currentValue} V', 
+				backgroundColors:[
+					[value: 115.6, 	color: "#ef221a"],
+					[value: 117.8, 	color: "#ffcc00"],
+					[value: 120.0, 	color: "#006600"],
+					[value: 122.2, 	color: "#ffcc00"],
+					[value: 124.4, 	color: "#ef221a"]
+				]
+			)
+		}
 
-    
+
 	// ************************************************************************
-    // * Amperage tiles
-    // ************************************************************************
-    
-        valueTile("A_L1_L2", "device.A_L1_L2", width: 2, height: 2) {
-        	state (
-        		"A_L1_L2",
-                label: '${currentValue} A' , 
-        		foregroundColor: "#000000", 
-    			color: "#000000", 
-    			backgroundColors:[
+	// * Amperage tiles
+	// ************************************************************************
+
+		valueTile("A_L1_L2", "device.A_L1_L2", width: 2, height: 2) {
+			state (
+				"A_L1_L2",
+				label: '${currentValue} A' , 
+				foregroundColor: "#000000", 
+				color: "#000000", 
+				backgroundColors:[
 					[value: 0,		color: "#006600"],	// Dark Green
 					[value: 25, 	color: "#009900"],	// Lighter Green
 					[value: 50, 	color: "#00cc00"],	// Light Green
@@ -286,14 +284,14 @@ metadata {
 					[value: 200,	color: "#ef221a"]	// Red
 				]
 			)
-        }
-        valueTile("A_L1", "device.A_L1", width: 3, height: 2) {
-        	state(
-        		"A_L1",
-                label:'${currentValue} A',
-        		foregroundColor: "#000000",
-    			color: "#000000",
-    			backgroundColors:[
+		}
+		valueTile("A_L1", "device.A_L1", width: 3, height: 2) {
+			state(
+				"A_L1",
+				label:'${currentValue} A',
+				foregroundColor: "#000000",
+				color: "#000000",
+				backgroundColors:[
 					[value: 0,		color: "#006600"],	// Dark Green
 					[value: 25, 	color: "#009900"],	// Lighter Green
 					[value: 50, 	color: "#00cc00"],	// Light Green
@@ -303,14 +301,14 @@ metadata {
 					[value: 200,	color: "#ef221a"]	// Red
 				]
 			)
-        }
-        valueTile("A_L2", "device.A_L2", width: 3, height: 2) {
-        	state(
-        		"A_L2",
-                label:'${currentValue} A',
-        		foregroundColor: "#000000", 
-    			color: "#000000", 
-    			backgroundColors:[
+		}
+		valueTile("A_L2", "device.A_L2", width: 3, height: 2) {
+			state(
+				"A_L2",
+				label:'${currentValue} A',
+				foregroundColor: "#000000", 
+				color: "#000000", 
+				backgroundColors:[
 					[value: 0,		color: "#006600"],	// Dark Green
 					[value: 25, 	color: "#009900"],	// Lighter Green
 					[value: 50, 	color: "#00cc00"],	// Light Green
@@ -319,94 +317,94 @@ metadata {
 					[value: 150,	color: "#ff6600"], 	// Orange
 					[value: 200,	color: "#ef221a"]	// Red
 				]
-			)        		
-        }
-    
+			)
+		}
+
+	// ************************************************************************	
+	// * CONTROL TILES
+	// *
+	// * Using decoration set to flat only because it enables visual feedback
+	// * of button being pressed
+	// * 
+	// * Using background color as it makes it more obvious it is a button,
+	// * and it delimites the space for text making it a bit more uniform
 	// ************************************************************************
-    // * CONTROL TILES
-    // *
-    // * Using decoration set to flat only because it enables visual feedback
-    // * of button being pressed
-    // * 
-    // * Using background color as it makes it more obvious it is a button,
-    // * and it delimites the space for text making it a bit more uniform
-    // ************************************************************************
-    
+
 		// Reset Button - Clear display and start over (will not reset kWh counter)
-        standardTile("reset", "command.reset", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
+		standardTile("reset", "command.reset", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
 			state "default", label:'___reset___', action:"reset", icon: "st.Health & Wellness.health7", backgroundColor: "#bcccac"
 		}
-        
-        // Reset kWh Button - Clear display, reset kWh counter and start over
-        standardTile("resetCtr", "device.reset_ctr", inactiveLabel: false, decoration: "flat", width: 6, height: 2) {
+
+		// Reset kWh Button - Clear display, reset kWh counter and start over
+		standardTile("resetCtr", "device.reset_ctr", inactiveLabel: false, decoration: "flat", width: 6, height: 2) {
 			state "default", label:'reset kwh counter', action:"resetCtr", icon: "st.Office.office10"
 		}
-        
-        // Refresh Button
+
+		// Refresh Button
 		standardTile("refresh", "command.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
-            state "default", label:'_refresh_', action:"refresh.refresh", icon:"st.secondary.refresh-icon", backgroundColor: "#bcccac" 
+			state "default", label:'_refresh_', action:"refresh.refresh", icon:"st.secondary.refresh-icon", backgroundColor: "#bcccac" 
 		}
-        
-        // Configure Button
+
+		// Configure Button
 		standardTile("configure", "command.configure", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
 			state "configure", label:'configure', action:"configuration.configure", icon:"st.secondary.tools", backgroundColor: "#bcccac"
 		}
 
 
 	// ************************************************************************
-    // * Which tiles are displayed and in what order
-    // ************************************************************************
+	// * Which tiles are displayed and in what order
+	// ************************************************************************
 
-       	main ([
-        	"E_L1_L2",
-            "W_L1_L2",
-            "A_L1_L2",
-            "V_L1_L2"
-            ])
+		main ([
+			"E_L1_L2",
+			"W_L1_L2",
+			"A_L1_L2",
+			"V_L1_L2"
+			])
         
 		details([
 			"V_L1_L2","W_L1_L2","A_L1_L2",
-            "W_L1","W_L2",
-            "A_L1","A_L2",
-            "resetDate", "E_L1_L2",
-            "E_L1","E_L2",
-            "reset","refresh","configure",
-            "resetCtr"
-            ])
+			"W_L1","W_L2",
+			"A_L1","A_L2",
+			"resetDate", "E_L1_L2",
+			"E_L1","E_L2",
+			"reset","refresh","configure",
+			"resetCtr"
+			])
 	}
-    
+
 	// ************************************************************************
-    // * User selectable preferences for Device Handler
-    // ************************************************************************
+	// * User selectable preferences for Device Handler
+	// ************************************************************************
+
+	// Setting a default value (defaultValue: "foobar") for an input may render that selection in the mobile app,
+	// but the user still needs to enter data in that field. It’s recommended to not use defaultValue to avoid confusion.
+
+	// Stuff disabled below is not fully functional yet
     
-    // Setting a default value (defaultValue: "foobar") for an input may render that selection in the mobile app,
-    // but the user still needs to enter data in that field. It’s recommended to not use defaultValue to avoid confusion.
-    
-    // Stuff disabled below is not fully functional yet
-    
-    preferences {
-    	//input name: "energyMeasurement", type: "enum", title: "Energy meter measurement?", options: ["kWh", "kVAh"], description: "Select measurement type", required: true, displayDuringSetup: true
-    	input "reportGroup1", type: "number", title: "Update energy meter every x seconds", description: "Enter desired seconds", defaultValue: 120, displayDuringSetup: false
-    	input "reportGroup2", type: "number", title: "Update all values every x seconds", description: "Enter desired seconds", defaultValue: 60, displayDuringSetup: false
-        input "reportGroup3", type: "number", title: "Update W & Total Power every x seconds", description: "Enter desired seconds", defaultValue: 10, displayDuringSetup: false
-        //input "debugOnOff", type: "boolean", title: "Debug log messages", description: "", defaultValue: "off", displayDuringSetup: false
-    }
+	preferences {
+		//input name: "energyMeasurement", type: "enum", title: "Energy meter measurement?", options: ["kWh", "kVAh"], description: "Select measurement type", required: true, displayDuringSetup: true
+		input "reportGroup1", type: "number", title: "Update energy meter every x seconds", description: "Enter desired seconds", defaultValue: 120, displayDuringSetup: false
+		input "reportGroup2", type: "number", title: "Update all values every x seconds", description: "Enter desired seconds", defaultValue: 60, displayDuringSetup: false
+		input "reportGroup3", type: "number", title: "Update W & Total Power every x seconds", description: "Enter desired seconds", defaultValue: 10, displayDuringSetup: false
+		//input "debugOnOff", type: "boolean", title: "Debug log messages", description: "", defaultValue: "off", displayDuringSetup: false
+	}
 
 }
 	// ************************************************************************
-    // * installed - to be reworked
-    // ************************************************************************
-    
+	// * installed - to be reworked
+	// ************************************************************************
+
 def installed() {
 	reset()						// The order here is important
 	configure()					// Since reports can start coming in even before we finish configure()
-    updateDisplay()
+	updateDisplay()
 	refresh()
 }
 
 	// ************************************************************************
-    // * updated - to be reworked
-    // ************************************************************************
+	// * updated - to be reworked
+	// ************************************************************************
 
 def updated() {
 	configure()
@@ -415,8 +413,8 @@ def updated() {
 }
 
 	// ************************************************************************
-    // * parse
-    // ************************************************************************
+	// * parse
+	// ************************************************************************
 
 def parse(String description) {
 //	log.debug "Parse received ${description}"
@@ -433,85 +431,84 @@ def parse(String description) {
 }
 
 	// ************************************************************************
-    // * zwaveEvent
-    // ************************************************************************
+	// * zwaveEvent
+	// ************************************************************************
     
 def zwaveEvent(physicalgraph.zwave.commands.meterv1.MeterReport cmd) {
-    def newValue
-    def formattedValue
-    def MAX_AMPS = 220				// This exceeds typical residential split-phase panel amerage on purpose, cuts off values that are too high (fluke in reading)
-    def MAX_WATTS = 26400			// This exceeds typical residential split-phase panel power on purpose, cuts off values that are too high (fluke in reading)
-    
-    // def timeStamp =  new Date().format("HH:MM - dd-MMM-yy", location.timeZone)
-    
-    if (cmd.meterType == 33) {
+	def newValue
+	def formattedValue
+	def MAX_AMPS = 220				// This exceeds typical residential split-phase panel amerage on purpose, cuts off values that are too high (fluke in reading)
+	def MAX_WATTS = 26400			// This exceeds typical residential split-phase panel power on purpose, cuts off values that are too high (fluke in reading)
+
+	// def timeStamp =  new Date().format("HH:MM - dd-MMM-yy", location.timeZone)
+	if (cmd.meterType == 33) {
 		if (cmd.scale == 0) {
-        	newValue = Math.round(cmd.scaledMeterValue * 100) / 100
-            formattedValue = String.format("%5.1f", newValue)
-        	if (formattedValue != state.E_L1_L2) {
-                sendEvent(name: "E_L1_L2", value: formattedValue, unit: "", descriptionText: "Display Energy: ${newValue} kWh", displayed: false)
-                state.E_L1_L2 = formattedValue
-                [name: "energy", value: newValue, unit: "kWh", descriptionText: "Total Energy: ${formattedValue} kWh"]
-            }
+			newValue = Math.round(cmd.scaledMeterValue * 100) / 100
+			formattedValue = String.format("%5.1f", newValue)
+			if (formattedValue != state.E_L1_L2) {
+				sendEvent(name: "E_L1_L2", value: formattedValue, unit: "", descriptionText: "Display Energy: ${newValue} kWh", displayed: false)
+				state.E_L1_L2 = formattedValue
+				[name: "energy", value: newValue, unit: "kWh", descriptionText: "Total Energy: ${formattedValue} kWh"]
+			}
 		} 
 		
-        else if (cmd.scale == 1) {
-            newValue = Math.round(cmd.scaledMeterValue * 100) / 100
-            formattedValue = String.format("%5.1f", newValue)
-            if (newValue != state.E_L1_L2) {
-                sendEvent(name: "E_L1_L2", value: formattedValue, unit: "", descriptionText: "Display Energy: ${formattedValue} kVAh", displayed: false)
-                state.E_L1_L2 = formattedValue
+		else if (cmd.scale == 1) {
+			newValue = Math.round(cmd.scaledMeterValue * 100) / 100
+			formattedValue = String.format("%5.1f", newValue)
+			if (newValue != state.E_L1_L2) {
+				sendEvent(name: "E_L1_L2", value: formattedValue, unit: "", descriptionText: "Display Energy: ${formattedValue} kVAh", displayed: false)
+				state.E_L1_L2 = formattedValue
 				[name: "energy", value: newValue, unit: "kVAh", descriptionText: "Total Energy: ${formattedValue} kVAh"]
-            }
+			}
 		}
-        else if (cmd.scale==2) {				
-        	newValue = Math.round(cmd.scaledMeterValue)
-            formattedValue = newValue as String
-            if (newValue > MAX_WATTS) { return }
-        	if (formattedValue != state.W_L1_L2) {
-                sendEvent(name: "W_L1_L2", value: formattedValue, unit: "", descriptionText: "Display Power: ${newValue} W", displayed: false)
-                state.W_L1_L2 = formattedValue
-                [name: "power", value: newValue, unit: "W", descriptionText: "Total Power: ${newValue} W"]
-            }
+		else if (cmd.scale==2) {
+			newValue = Math.round(cmd.scaledMeterValue)
+			formattedValue = newValue as String
+			if (newValue > MAX_WATTS) { return }
+			if (formattedValue != state.W_L1_L2) {
+				sendEvent(name: "W_L1_L2", value: formattedValue, unit: "", descriptionText: "Display Power: ${newValue} W", displayed: false)
+				state.W_L1_L2 = formattedValue
+				[name: "power", value: newValue, unit: "W", descriptionText: "Total Power: ${newValue} W"]
+			}
 		}
- 	}
-    else if (cmd.meterType == 161) {
-    	if (cmd.scale == 0) {
-        	newValue = Math.round(cmd.scaledMeterValue * 100) / 100
-            formattedValue = String.format("%5.1f", newValue)
+	}
+	else if (cmd.meterType == 161) {
+		if (cmd.scale == 0) {
+			newValue = Math.round(cmd.scaledMeterValue * 100) / 100
+			formattedValue = String.format("%5.1f", newValue)
 			if (formattedValue != state.V_L1_L2) {
-                sendEvent(name: "V_L1_L2", value: formattedValue, unit: "", descriptionText: "Display Voltage: ${formattedValue} V", displayed: false)              
-                state.V_L1_L2 = formattedValue
-                [name: "volts", value: newValue, unit: "V", descriptionText: "Volts: ${formattedValue} V"]
-            }
-        }
-        else if (cmd.scale==1) {
-        	newValue = Math.round( cmd.scaledMeterValue * 100) / 100
-            if (newValue > MAX_AMPS) { return }
-            formattedValue = String.format("%5.1f", newValue)
-            if (formattedValue != state.A_L1_L2) {
-                sendEvent(name: "A_L1_L2", value: formattedValue, unit: "", descriptionText: "Display Current: ${formattedValue}", displayed: false)              
-                state.A_L1_L2 = formattedValue
+				sendEvent(name: "V_L1_L2", value: formattedValue, unit: "", descriptionText: "Display Voltage: ${formattedValue} V", displayed: false)              
+				state.V_L1_L2 = formattedValue
+				[name: "volts", value: newValue, unit: "V", descriptionText: "Volts: ${formattedValue} V"]
+			}
+		}
+		else if (cmd.scale==1) {
+			newValue = Math.round( cmd.scaledMeterValue * 100) / 100
+			if (newValue > MAX_AMPS) { return }
+			formattedValue = String.format("%5.1f", newValue)
+			if (formattedValue != state.A_L1_L2) {
+				sendEvent(name: "A_L1_L2", value: formattedValue, unit: "", descriptionText: "Display Current: ${formattedValue}", displayed: false)              
+				state.A_L1_L2 = formattedValue
 				[name: "amps", value: newValue, unit: "A", descriptionText: "Total Current: ${formattedValue} A"]
-            }
-        }
-    }           
+			}
+		}
+	}           
 }
 
 def zwaveEvent(physicalgraph.zwave.commands.multichannelv3.MultiChannelCmdEncap cmd) {
 	def newValue
 	def formattedValue
-    def MAX_AMPS = 220				// This exceeds typical residential split-phase panel amerage on purpose, cuts off values that are too high (fluke in reading)
-    def MAX_WATTS = 26400			// This exceeds typical residential split-phase panel power on purpose, cuts off values that are too high (fluke in reading)
+	def MAX_AMPS = 220				// This exceeds typical residential split-phase panel amerage on purpose, cuts off values that are too high (fluke in reading)
+	def MAX_WATTS = 26400			// This exceeds typical residential split-phase panel power on purpose, cuts off values that are too high (fluke in reading)
 
-   	if (cmd.commandClass == 50) {    
-   		def encapsulatedCommand = cmd.encapsulatedCommand([0x30: 1, 0x31: 1]) // can specify command class versions here like in zwave.parse
+	if (cmd.commandClass == 50) {    
+		def encapsulatedCommand = cmd.encapsulatedCommand([0x30: 1, 0x31: 1]) // can specify command class versions here like in zwave.parse
 		if (encapsulatedCommand) {
-        	// This section handles values from Clamp 1 (EndPoint 1)
+			// This section handles values from Clamp 1 (EndPoint 1)
 			if (cmd.sourceEndPoint == 1) {
 				if (encapsulatedCommand.scale == 2 ) {
 					newValue = Math.round(encapsulatedCommand.scaledMeterValue)
-                    if (newValue > MAX_WATTS) { return }											//Ignore values that are too high, definitely incorrect
+					if (newValue > MAX_WATTS) { return }											//Ignore values that are too high, definitely incorrect
 					formattedValue = newValue as String
 					if (formattedValue != state.W_L1) {
 						state.W_L1 = formattedValue
@@ -536,27 +533,27 @@ def zwaveEvent(physicalgraph.zwave.commands.multichannelv3.MultiChannelCmdEncap 
 				}
 				else if (encapsulatedCommand.scale == 5 ) {
 					newValue = Math.round(encapsulatedCommand.scaledMeterValue * 100) / 100
-                    if (newValue > MAX_AMPS) { return }												//Ignore values that are too high, definitely incorrect
-                    formattedValue = String.format("%5.1f", newValue)
+					if (newValue > MAX_AMPS) { return }												//Ignore values that are too high, definitely incorrect
+					formattedValue = String.format("%5.1f", newValue)
 					if (formattedValue != state.A_L1) {
 						state.A_L1 = formattedValue
 						[name: "A_L1", value: formattedValue, unit: "", descriptionText: "L1 Current: ${formattedValue} A"]
 					}
-               	} 
-              	else if (encapsulatedCommand.scale == 4 ){
-               		newValue = Math.round(encapsulatedCommand.scaledMeterValue * 100) / 100
+				} 
+				else if (encapsulatedCommand.scale == 4 ){
+					newValue = Math.round(encapsulatedCommand.scaledMeterValue * 100) / 100
 					formattedValue = String.format("%5.1f", newValue)
 					if (formattedValue != state.V_L1) {
 						state.V_L1 = formattedValue
 						[name: "V_L1", value: formattedValue, unit: "", descriptionText: "L1 Voltage: ${formattedValue} V"]
 					}
-               	}               
+				}               
 			}
-            // This section handles values from Clamp 2 (EndPoint 2)
+			// This section handles values from Clamp 2 (EndPoint 2)
 			else if (cmd.sourceEndPoint == 2) {
 				if (encapsulatedCommand.scale == 2 ){
 					newValue = Math.round(encapsulatedCommand.scaledMeterValue)
-                    if (newValue > MAX_WATTS ) { return }											//Ignore values that are too high, definitely incorrect
+					if (newValue > MAX_WATTS ) { return }											//Ignore values that are too high, definitely incorrect
 					formattedValue = newValue as String
 					if (formattedValue != state.W_L2) {
 						state.W_L2 = formattedValue
@@ -580,22 +577,22 @@ def zwaveEvent(physicalgraph.zwave.commands.multichannelv3.MultiChannelCmdEncap 
 					}
 				}
 				else if (encapsulatedCommand.scale == 5 ){
-               		newValue = Math.round(encapsulatedCommand.scaledMeterValue * 100) / 100
-                    if (newValue > MAX_AMPS) { return }												//Ignore values that are too high, definitely incorrect
-                    formattedValue = String.format("%5.1f", newValue)
+					newValue = Math.round(encapsulatedCommand.scaledMeterValue * 100) / 100
+					if (newValue > MAX_AMPS) { return }												//Ignore values that are too high, definitely incorrect
+					formattedValue = String.format("%5.1f", newValue)
 					if (formattedValue != state.A_L2) {
 						state.A_L2 = formattedValue
 						[name: "A_L2", value: formattedValue, unit: "", descriptionText: "L2 Current: ${formattedValue} A"]
 					}
 				}
-	    		else if (encapsulatedCommand.scale == 4 ){
-               		newValue = Math.round(encapsulatedCommand.scaledMeterValue * 100) / 100
+				else if (encapsulatedCommand.scale == 4 ){
+					newValue = Math.round(encapsulatedCommand.scaledMeterValue * 100) / 100
 					formattedValue = String.format("%5.1f", newValue)
 					if (formattedValue != state.V_L2) {
 						state.V_L2 = formattedValue
 						[name: "V_L2", value: formattedValue, unit: "", descriptionText: "L2 Voltage: ${formattedValue} V"]
 					}
-               	}               			
+				}
 			}
 		}
 	}
@@ -604,16 +601,16 @@ def zwaveEvent(physicalgraph.zwave.commands.multichannelv3.MultiChannelCmdEncap 
 
 def zwaveEvent(physicalgraph.zwave.Command cmd) {
 	// Handles all Z-Wave commands we aren't interested in
-    log.debug "Unhandled event ${cmd}"
+	log.debug "Unhandled event ${cmd}"
 	[:]
 }
 
 // Read new values and display them on screen. Do not reset anything.
 def refresh() {
 	log.debug "refresh()"
-    
-    newMeasurements()		// Read new values from meter
-    updateDisplay()			// Send new values to display
+
+	newMeasurements()		// Read new values from meter
+	updateDisplay()			// Send new values to display
 }
 
 /*
@@ -626,41 +623,41 @@ def poll() {
 def updateDisplay() {
 	log.debug "updateDisplay() - E_L1_L2: ${state.E_L1_L2}"
 	
-    sendEvent(name: "V_L1_L2", value: state.V_L1_L2, unit: "")    
-    sendEvent(name: "V_L1", value: state.V_L1, unit: "")
-    sendEvent(name: "V_L2", value: state.V_L2, unit: "")
-   	
-   	sendEvent(name: "W_L1_L2", value: state.W_L1_L2, unit: "")
-    sendEvent(name: "W_L1", value: state.W_L1, unit: "")     
-    sendEvent(name: "W_L2", value: state.W_L2, unit: "")
+	sendEvent(name: "V_L1_L2", value: state.V_L1_L2, unit: "")    
+	sendEvent(name: "V_L1", value: state.V_L1, unit: "")
+	sendEvent(name: "V_L2", value: state.V_L2, unit: "")
+
+	sendEvent(name: "W_L1_L2", value: state.W_L1_L2, unit: "")
+	sendEvent(name: "W_L1", value: state.W_L1, unit: "")     
+	sendEvent(name: "W_L2", value: state.W_L2, unit: "")
 
 	sendEvent(name: "A_L1_L2", value: state.A_L1_L2, unit: "")
 	sendEvent(name: "A_L1", value: state.A_L1, unit: "")    
 	sendEvent(name: "A_L2", value: state.A_L2, unit: "")
-    
+
 	sendEvent(name: "E_L1_L2", value: state.E_L1_L2, unit: "")
 	sendEvent(name: "E_L1", value: state.E_L1, unit: "")
 	sendEvent(name: "E_L2", value: state.E_L2, unit: "")
 
-    sendEvent(name: "resetDate", value: state.resetDate, unit: "")	
+	sendEvent(name: "resetDate", value: state.resetDate, unit: "")	
 
 }
 
 	// ************************************************************************
-    // * Request new values from HEM without resetting the device
-    // ************************************************************************
+	// * Request new values from HEM without resetting the device
+	// ************************************************************************
 
 def newMeasurements() {
-    
-    def measurementType = 0
-    /*
-    if(settings.energyMeasurement == "kWh") {measurementType = 0}
-    else
-    {measurementType = 1}
+
+	def measurementType = 0
+	/*
+	if(settings.energyMeasurement == "kWh") {measurementType = 0}
+	else
+	{measurementType = 1}
 	*/
       
 	def cmd = delayBetween( [
-        zwave.meterV2.meterGet(scale: measurementType).format(),	// 0 = Requests kWh values; 1 = Requests kVAh values
+		zwave.meterV2.meterGet(scale: measurementType).format(),	// 0 = Requests kWh values; 1 = Requests kVAh values
 		zwave.meterV2.meterGet(scale: 2).format(),					// Requests W values
 		zwave.meterV2.meterGet(scale: 4).format(),					// Requests V values
 		zwave.meterV2.meterGet(scale: 5).format()					// Requests A values
