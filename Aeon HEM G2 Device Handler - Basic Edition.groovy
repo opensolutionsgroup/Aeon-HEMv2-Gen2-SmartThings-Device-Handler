@@ -1,5 +1,6 @@
 /**
  *  Aeon Home Energy Meter v2 Gen2 Basic Edition
+ *	Version: 0.9b
  *
  *	Disclaimer: This WILL NOT work with Aeon's HEM Gen1 or Gen5 (latest version) as is intended to be used for HEMs
  *				installed on the typical 200A 240V split-phase US residential systems (Two 120V legs and a neutral -
@@ -66,8 +67,17 @@ metadata {
 		name: 		"Aeon HEMv2 Gen2 - AMR Basic Edition", 
 		namespace: 	"Green Living",
 		category: 	"Green Living",
-		author: 	"Alex M. Ruffell"
-	) 
+		author: 	"Alex M. Ruffell",
+        
+        // ************************************************************************
+    	// * Icons - for now random icons I found until I find a better fit
+    	// ************************************************************************
+    
+    	iconUrl: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience.png",
+		iconX2Url: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience@2x.png",
+		iconX3Url: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience@2x.png"
+	)
+    
 	{
     	capability "Energy Meter"
 		capability "Power Meter"
@@ -140,15 +150,24 @@ metadata {
             		[value: 1, color: "#000000"],
             		[value: 10000, color: "#ffffff"]
             	], 
-            	foregroundColor: "#000000",
+            	//foregroundColor: "#000000",
                 backgroundColors:[
-					[value: 0, 		color: "#153591"],
+					[value: 0, 		color: "#006600"],	// Dark Green
+					[value: 3000, 	color: "#009900"],	// Lighter Green
+					[value: 6000, 	color: "#00cc00"],	// Light Green
+					[value: 9000, 	color: "#99cc00"],	// Green, touch of yellow
+					[value: 12000, 	color: "#ffcc00"],	// Yellow
+					[value: 18000, 	color: "#ff6600"],	// Orange
+					[value: 24000, 	color: "#ef221a"]	// Red
+				
+                	/* Original colors, taken from ST examples
+                	[value: 0, 		color: "#153591"],
 					[value: 3000, 	color: "#1e9cbb"],
 					[value: 6000, 	color: "#90d2a7"],
 					[value: 9000, 	color: "#44b621"],
 					[value: 12000, 	color: "#f1d801"],
 					[value: 18000, 	color: "#d04e00"], 
-					[value: 24000, 	color: "#bc2323"]
+					[value: 24000, 	color: "#bc2323"]*/
 				]
 			)
 		}
@@ -162,13 +181,13 @@ metadata {
             	], 
             	foregroundColor: "#000000",
                 backgroundColors:[
-					[value: 0, 		color: "#153591"],
-					[value: 3000, 	color: "#1e9cbb"],
-					[value: 6000, 	color: "#90d2a7"],
-					[value: 9000, 	color: "#44b621"],
-					[value: 12000, 	color: "#f1d801"],
-					[value: 18000, 	color: "#d04e00"], 
-					[value: 24000, 	color: "#bc2323"]
+					[value: 0, 		color: "#006600"],	// Dark Green
+					[value: 3000, 	color: "#009900"],	// Lighter Green
+					[value: 6000, 	color: "#00cc00"],	// Light Green
+					[value: 9000, 	color: "#99cc00"],	// Green, touch of yellow
+					[value: 12000, 	color: "#ffcc00"],	// Yellow
+					[value: 18000, 	color: "#ff6600"],	// Orange
+					[value: 24000, 	color: "#ef221a"]	// Red
 				]
 			)
         }
@@ -182,13 +201,13 @@ metadata {
             	], 
             	foregroundColor: "#000000",
                 backgroundColors:[
-					[value: 0, 		color: "#153591"],
-					[value: 3000, 	color: "#1e9cbb"],
-					[value: 6000, 	color: "#90d2a7"],
-					[value: 9000, 	color: "#44b621"],
-					[value: 12000, 	color: "#f1d801"],
-					[value: 18000, 	color: "#d04e00"], 
-					[value: 24000, 	color: "#bc2323"]
+					[value: 0, 		color: "#006600"],	// Dark Green
+					[value: 3000, 	color: "#009900"],	// Lighter Green
+					[value: 6000, 	color: "#00cc00"],	// Light Green
+					[value: 9000, 	color: "#99cc00"],	// Green, touch of yellow
+					[value: 12000, 	color: "#ffcc00"],	// Yellow
+					[value: 18000, 	color: "#ff6600"],	// Orange
+					[value: 24000, 	color: "#ef221a"]	// Red
 				]
 			)
         }
@@ -204,7 +223,7 @@ metadata {
 				foregroundColor: "#000000", 
 				backgroundColor: "#ffffff")
 		}    
-		valueTile("E_L1_L2", "device.E_L1_L2", width: 3, height: 1, canChangeIcon: true) {
+		valueTile("E_L1_L2", "device.E_L1_L2", width: 3, height: 1/*, canChangeIcon: true*/) {
 			state(
 				"E_L1_L2",
 				label: '${currentValue} kWh', 
@@ -237,11 +256,11 @@ metadata {
         		"V_L1_L2",
                 label: '${currentValue} V', 
         		backgroundColors:[
-            		[value: 115.6, 	color: "#bc2323"],
-                	[value: 117.8, 	color: "#D04E00"],
-                	[value: 120.0, 	color: "#44B621"],
-                	[value: 122.2, 	color: "#D04E00"],
-                	[value: 124.4, 	color: "#bc2323"]
+            		[value: 115.6, 	color: "#ef221a"],
+                	[value: 117.8, 	color: "#ffcc00"],
+                	[value: 120.0, 	color: "#006600"],
+                	[value: 122.2, 	color: "#ffcc00"],
+                	[value: 124.4, 	color: "#ef221a"]
             	]
             )
         }
@@ -258,13 +277,13 @@ metadata {
         		foregroundColor: "#000000", 
     			color: "#000000", 
     			backgroundColors:[
-					[value: 0,		color: "#153591"],
-					[value: 25, 	color: "#1e9cbb"],
-					[value: 50, 	color: "#90d2a7"],
-					[value: 75, 	color: "#44b621"],
-					[value: 100,	color: "#f1d801"],
-					[value: 150,	color: "#d04e00"], 
-					[value: 200,	color: "#bc2323"]
+					[value: 0,		color: "#006600"],	// Dark Green
+					[value: 25, 	color: "#009900"],	// Lighter Green
+					[value: 50, 	color: "#00cc00"],	// Light Green
+					[value: 75, 	color: "#99cc00"],	// Green, touch of yellow
+					[value: 100,	color: "#ffcc00"],	// Yellow
+					[value: 150,	color: "#ff6600"], 	// Orange
+					[value: 200,	color: "#ef221a"]	// Red
 				]
 			)
         }
@@ -275,13 +294,13 @@ metadata {
         		foregroundColor: "#000000",
     			color: "#000000",
     			backgroundColors:[
-					[value: 0,		color: "#153591"],
-					[value: 25, 	color: "#1e9cbb"],
-					[value: 50, 	color: "#90d2a7"],
-					[value: 75, 	color: "#44b621"],
-					[value: 100,	color: "#f1d801"],
-					[value: 150,	color: "#d04e00"], 
-					[value: 200,	color: "#bc2323"]
+					[value: 0,		color: "#006600"],	// Dark Green
+					[value: 25, 	color: "#009900"],	// Lighter Green
+					[value: 50, 	color: "#00cc00"],	// Light Green
+					[value: 75, 	color: "#99cc00"],	// Green, touch of yellow
+					[value: 100,	color: "#ffcc00"],	// Yellow
+					[value: 150,	color: "#ff6600"], 	// Orange
+					[value: 200,	color: "#ef221a"]	// Red
 				]
 			)
         }
@@ -292,13 +311,13 @@ metadata {
         		foregroundColor: "#000000", 
     			color: "#000000", 
     			backgroundColors:[
-					[value: 0,		color: "#153591"],
-					[value: 25, 	color: "#1e9cbb"],
-					[value: 50, 	color: "#90d2a7"],
-					[value: 75, 	color: "#44b621"],
-					[value: 100,	color: "#f1d801"],
-					[value: 150,	color: "#d04e00"], 
-					[value: 200,	color: "#bc2323"]
+					[value: 0,		color: "#006600"],	// Dark Green
+					[value: 25, 	color: "#009900"],	// Lighter Green
+					[value: 50, 	color: "#00cc00"],	// Light Green
+					[value: 75, 	color: "#99cc00"],	// Green, touch of yellow
+					[value: 100,	color: "#ffcc00"],	// Yellow
+					[value: 150,	color: "#ff6600"], 	// Orange
+					[value: 200,	color: "#ef221a"]	// Red
 				]
 			)        		
         }
@@ -360,14 +379,20 @@ metadata {
     // * User selectable preferences for Device Handler
     // ************************************************************************
     
+    // Setting a default value (defaultValue: "foobar") for an input may render that selection in the mobile app,
+    // but the user still needs to enter data in that field. It’s recommended to not use defaultValue to avoid confusion.
+    
+    // Stuff disabled below is not fully functional yet
+    
     preferences {
-    	input "reportGroup1", "number", title: "Update kWh every x seconds (120)", description: "Enter desired seconds", defaultValue: 120
-    	input "reportGroup2", "number", title: "Update all values every x seconds (60)", description: "Enter desired seconds", defaultValue: 60
-        input "reportGroup3", "number", title: "Update W & Total Power every x seconds (10)", description: "Enter desired seconds", defaultValue: 10
-        //input "debugOnOff", "boolean", title: "Debug log messages", description: "", defaultValue: "off"
+    	//input name: "energyMeasurement", type: "enum", title: "Energy meter measurement?", options: ["kWh", "kVAh"], description: "Select measurement type", required: true, displayDuringSetup: true
+    	input "reportGroup1", type: "number", title: "Update energy meter every x seconds", description: "Enter desired seconds", defaultValue: 120, displayDuringSetup: false
+    	input "reportGroup2", type: "number", title: "Update all values every x seconds", description: "Enter desired seconds", defaultValue: 60, displayDuringSetup: false
+        input "reportGroup3", type: "number", title: "Update W & Total Power every x seconds", description: "Enter desired seconds", defaultValue: 10, displayDuringSetup: false
+        //input "debugOnOff", type: "boolean", title: "Debug log messages", description: "", defaultValue: "off", displayDuringSetup: false
     }
-}
 
+}
 	// ************************************************************************
     // * installed - to be reworked
     // ************************************************************************
@@ -375,6 +400,7 @@ metadata {
 def installed() {
 	reset()						// The order here is important
 	configure()					// Since reports can start coming in even before we finish configure()
+    updateDisplay()
 	refresh()
 }
 
@@ -413,10 +439,10 @@ def parse(String description) {
 def zwaveEvent(physicalgraph.zwave.commands.meterv1.MeterReport cmd) {
     def newValue
     def formattedValue
-    def MAX_AMPS = 220
-    def MAX_WATTS = 24000
+    def MAX_AMPS = 220				// This exceeds typical residential split-phase panel amerage on purpose, cuts off values that are too high (fluke in reading)
+    def MAX_WATTS = 26400			// This exceeds typical residential split-phase panel power on purpose, cuts off values that are too high (fluke in reading)
     
-    def timeStamp =  new Date().format("HH:MM - dd-MMM-yy", location.timeZone)
+    // def timeStamp =  new Date().format("HH:MM - dd-MMM-yy", location.timeZone)
     
     if (cmd.meterType == 33) {
 		if (cmd.scale == 0) {
@@ -475,8 +501,8 @@ def zwaveEvent(physicalgraph.zwave.commands.meterv1.MeterReport cmd) {
 def zwaveEvent(physicalgraph.zwave.commands.multichannelv3.MultiChannelCmdEncap cmd) {
 	def newValue
 	def formattedValue
-    def MAX_AMPS = 220
-    def MAX_WATTS = 24000
+    def MAX_AMPS = 220				// This exceeds typical residential split-phase panel amerage on purpose, cuts off values that are too high (fluke in reading)
+    def MAX_WATTS = 26400			// This exceeds typical residential split-phase panel power on purpose, cuts off values that are too high (fluke in reading)
 
    	if (cmd.commandClass == 50) {    
    		def encapsulatedCommand = cmd.encapsulatedCommand([0x30: 1, 0x31: 1]) // can specify command class versions here like in zwave.parse
@@ -625,16 +651,28 @@ def updateDisplay() {
     // ************************************************************************
 
 def newMeasurements() {
+    
+    def measurementType = 0
+    /*
+    if(settings.energyMeasurement == "kWh") {measurementType = 0}
+    else
+    {measurementType = 1}
+	*/
+      
 	def cmd = delayBetween( [
-        zwave.meterV2.meterGet(scale: 0).format(),		// Requests kWh values
-        //zwave.meterV2.meterGet(scale: 1).format(),	// Requests kVAh values
-		zwave.meterV2.meterGet(scale: 2).format(),		// Requests W values
-		zwave.meterV2.meterGet(scale: 4).format(),		// Requests V values
-		zwave.meterV2.meterGet(scale: 5).format()		// Requests A values
+        zwave.meterV2.meterGet(scale: measurementType).format(),	// 0 = Requests kWh values; 1 = Requests kVAh values
+		zwave.meterV2.meterGet(scale: 2).format(),					// Requests W values
+		zwave.meterV2.meterGet(scale: 4).format(),					// Requests V values
+		zwave.meterV2.meterGet(scale: 5).format()					// Requests A values
         
 	], 1000)
     cmd
     }
+
+	// ************************************************************************
+    // * Reset - This mostly resets values and what is shown on the display in case it seems stuck or there are other issues.
+    // * It is not meant to reset the meter deleting the running counter, there is another method for that.
+    // ************************************************************************
 
 def reset() {
 	log.debug "reset()"
@@ -652,7 +690,8 @@ def reset() {
     state.V_L1_L2 =	"0"
     state.V_L1 =	"0"
     state.V_L2 =	"0"
-
+	
+    // Clear tiles
 	sendEvent(name: "E_L1_L2",		value: "", unit: "")
     sendEvent(name: "E_L1",			value: "", unit: "")
     sendEvent(name: "E_L2",			value: "", unit: "")
