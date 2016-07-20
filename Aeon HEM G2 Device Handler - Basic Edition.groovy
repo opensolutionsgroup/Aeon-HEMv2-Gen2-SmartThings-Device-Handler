@@ -55,6 +55,16 @@
  *	History:
  * 
  *	2016-07-15:	- Basic functionality seems to work but lots more work is necessary
+ *	2016-07-19:	- Change max values used for tile colors. I want the tile to be red before it gets to max values. If it goes beyond the
+ *				  new lower max it will either just stay red. All steps in between are interpolated so this change just makes it transition
+ *				  to red sooner.
+ *				- Got rid of all foreground color code as it does not do anything (on Android at the very least)
+ *				- Added V adjustment in case the meter's readings are off
+ *				- 
+ *				- 
+ *				- 
+ *				- 
+ *				- 
  *
  *	Disclaimer 2:	I am NOT a developer. I learn as I go so please do NOT rely on this for anything critical. Use it and
  *					change it as needed but not for commercial purposes. I will not make any changes to this code that fix things on iOS
@@ -146,19 +156,17 @@ metadata {
 			state (
 				"W_L1_L2", 
 				label:'${currentValue} W', 
-				foregroundColors:[
-					[value: 1, color: "#000000"],
-					[value: 10000, color: "#ffffff"]
-				], 
-				//foregroundColor: "#000000",
 				backgroundColors:[
+                // W values here could go from 0 to 24000 for a 200A service residence however
+                // the icon should turn red before it reaches the max, so I am reducing the range
+                // to 0 to 18kW so each step is 3kW.
 					[value: 0, 		color: "#006600"],	// Dark Green
 					[value: 3000, 	color: "#009900"],	// Lighter Green
 					[value: 6000, 	color: "#00cc00"],	// Light Green
 					[value: 9000, 	color: "#99cc00"],	// Green, touch of yellow
 					[value: 12000, 	color: "#ffcc00"],	// Yellow
-					[value: 18000, 	color: "#ff6600"],	// Orange
-					[value: 24000, 	color: "#ef221a"]	// Red
+					[value: 15000, 	color: "#ff6600"],	// Orange
+					[value: 18000, 	color: "#ef221a"]	// Red
 				
 					/* Original colors, taken from ST examples
 					[value: 0, 		color: "#153591"],
@@ -175,19 +183,17 @@ metadata {
 			state(
 				"W_L1", 
 				label:'${currentValue} W',
-				foregroundColors:[
-					[value: 1, color: "#000000"],
-					[value: 10000, color: "#ffffff"]
-				], 
-				foregroundColor: "#000000",
 				backgroundColors:[
+                // W values here could go from 0 to 24000 for a 200A service residence however
+                // the icon should turn red before it reaches the max, so I am reducing the range
+                // to 0 to 18kW so each step is 3kW.
 					[value: 0, 		color: "#006600"],	// Dark Green
 					[value: 3000, 	color: "#009900"],	// Lighter Green
 					[value: 6000, 	color: "#00cc00"],	// Light Green
 					[value: 9000, 	color: "#99cc00"],	// Green, touch of yellow
 					[value: 12000, 	color: "#ffcc00"],	// Yellow
-					[value: 18000, 	color: "#ff6600"],	// Orange
-					[value: 24000, 	color: "#ef221a"]	// Red
+					[value: 15000, 	color: "#ff6600"],	// Orange
+					[value: 18000, 	color: "#ef221a"]	// Red
 				]
 			)
 		}
@@ -195,19 +201,17 @@ metadata {
 			state(
 				"W_L2", 
 				label:'${currentValue} W', 
-				foregroundColors:[
-					[value: 1, color: "#000000"],
-					[value: 10000, color: "#ffffff"]
-				], 
-				foregroundColor: "#000000",
 				backgroundColors:[
+                // W values here could go from 0 to 24000 for a 200A service residence however
+                // the icon should turn red before it reaches the max, so I am reducing the range
+                // to 0 to 18kW so each step is 3kW.
 					[value: 0, 		color: "#006600"],	// Dark Green
 					[value: 3000, 	color: "#009900"],	// Lighter Green
 					[value: 6000, 	color: "#00cc00"],	// Light Green
 					[value: 9000, 	color: "#99cc00"],	// Green, touch of yellow
 					[value: 12000, 	color: "#ffcc00"],	// Yellow
-					[value: 18000, 	color: "#ff6600"],	// Orange
-					[value: 24000, 	color: "#ef221a"]	// Red
+					[value: 15000, 	color: "#ff6600"],	// Orange
+					[value: 18000, 	color: "#ef221a"]	// Red
 				]
 			)
 		}
@@ -220,28 +224,24 @@ metadata {
 			state(
 				"resetDate",
 				label: '${currentValue}', 
-				foregroundColor: "#000000", 
 				backgroundColor: "#ffffff")
 		}    
 		valueTile("E_L1_L2", "device.E_L1_L2", width: 3, height: 1/*, canChangeIcon: true*/) {
 			state(
 				"E_L1_L2",
 				label: '${currentValue} kWh', 
-				foregroundColor: "#000000", 
 				backgroundColor: "#ffffff")
 		}
 		valueTile("E_L1", "device.E_L1", width: 3, height: 1) {
 			state(
 				"E_L1",
 				label: '${currentValue} kWh', 
-				foregroundColor: "#000000", 
 				backgroundColor: "#ffffff")
 		}        
 		valueTile("E_L2", "device.E_L2", width: 3, height: 1) {
 			state(
 				"E_L2",
 				label: '${currentValue} kWh', 
-				foregroundColor: "#000000", 
 				backgroundColor: "#ffffff")
 		}
 
@@ -272,16 +272,17 @@ metadata {
 			state (
 				"A_L1_L2",
 				label: '${currentValue} A' , 
-				foregroundColor: "#000000", 
-				color: "#000000", 
 				backgroundColors:[
+                // A values here could go from 0 to 200 for a 200A serivce residence however
+                // the icon should turn red before it reaches the max, so I am reducing the range
+                // to 0 to 150A so each step is 25A.
 					[value: 0,		color: "#006600"],	// Dark Green
 					[value: 25, 	color: "#009900"],	// Lighter Green
 					[value: 50, 	color: "#00cc00"],	// Light Green
 					[value: 75, 	color: "#99cc00"],	// Green, touch of yellow
 					[value: 100,	color: "#ffcc00"],	// Yellow
-					[value: 150,	color: "#ff6600"], 	// Orange
-					[value: 200,	color: "#ef221a"]	// Red
+					[value: 125,	color: "#ff6600"], 	// Orange
+					[value: 150,	color: "#ef221a"]	// Red
 				]
 			)
 		}
@@ -289,16 +290,17 @@ metadata {
 			state(
 				"A_L1",
 				label:'${currentValue} A',
-				foregroundColor: "#000000",
-				color: "#000000",
 				backgroundColors:[
+                // A values here could go from 0 to 200 for a 200A serivce residence however
+                // the icon should turn red before it reaches the max, so I am reducing the range
+                // to 0 to 150A so each step is 25A.
 					[value: 0,		color: "#006600"],	// Dark Green
 					[value: 25, 	color: "#009900"],	// Lighter Green
 					[value: 50, 	color: "#00cc00"],	// Light Green
 					[value: 75, 	color: "#99cc00"],	// Green, touch of yellow
 					[value: 100,	color: "#ffcc00"],	// Yellow
-					[value: 150,	color: "#ff6600"], 	// Orange
-					[value: 200,	color: "#ef221a"]	// Red
+					[value: 125,	color: "#ff6600"], 	// Orange
+					[value: 150,	color: "#ef221a"]	// Red
 				]
 			)
 		}
@@ -306,16 +308,17 @@ metadata {
 			state(
 				"A_L2",
 				label:'${currentValue} A',
-				foregroundColor: "#000000", 
-				color: "#000000", 
 				backgroundColors:[
+                // A values here could go from 0 to 200 for a 200A serivce residence however
+                // the icon should turn red before it reaches the max, so I am reducing the range
+                // to 0 to 150A so each step is 25A.
 					[value: 0,		color: "#006600"],	// Dark Green
 					[value: 25, 	color: "#009900"],	// Lighter Green
 					[value: 50, 	color: "#00cc00"],	// Light Green
 					[value: 75, 	color: "#99cc00"],	// Green, touch of yellow
 					[value: 100,	color: "#ffcc00"],	// Yellow
-					[value: 150,	color: "#ff6600"], 	// Orange
-					[value: 200,	color: "#ef221a"]	// Red
+					[value: 125,	color: "#ff6600"], 	// Orange
+					[value: 150,	color: "#ef221a"]	// Red
 				]
 			)
 		}
@@ -356,10 +359,10 @@ metadata {
 	// ************************************************************************
 
 		main ([
-			"E_L1_L2",
+			"E_L1_L2"/*,
 			"W_L1_L2",
 			"A_L1_L2",
-			"V_L1_L2"
+			"V_L1_L2"*/
 			])
         
 		details([
@@ -384,32 +387,38 @@ metadata {
     
 	preferences {
 		//input name: "energyMeasurement", type: "enum", title: "Energy meter measurement?", options: ["kWh", "kVAh"], description: "Select measurement type", required: true, displayDuringSetup: true
-		input "reportGroup1", type: "number", title: "Update energy meter every x seconds", description: "Enter desired seconds", defaultValue: 120, displayDuringSetup: false
-		input "reportGroup2", type: "number", title: "Update all values every x seconds", description: "Enter desired seconds", defaultValue: 60, displayDuringSetup: false
-		input "reportGroup3", type: "number", title: "Update W & Total Power every x seconds", description: "Enter desired seconds", defaultValue: 10, displayDuringSetup: false
+		input name: "reportGroup1", type: "number", title: "Update energy meter every x seconds", description: "Enter desired seconds", defaultValue: 78, displayDuringSetup: false
+		input name: "reportGroup2", type: "number", title: "Update all values every x seconds", description: "Enter desired seconds", defaultValue: 60, displayDuringSetup: false
+		input name: "reportGroup3", type: "number", title: "Update W & Total Power every x seconds", description: "Enter desired seconds", defaultValue: 78, displayDuringSetup: false
+        input name: "vAdjustment", type: "number", title: "Voltage adjustment (+/-x)", description: "Enter adjustment amount +/-x", defaultValue: 0, displayDuringSetup: false
 		//input "debugOnOff", type: "boolean", title: "Debug log messages", description: "", defaultValue: "off", displayDuringSetup: false
 	}
 
 }
+
 	// ************************************************************************
-	// * installed - to be reworked
+	// * installed() - Called when an instance of the app is installed.
+    // * Typically subscribes to events from the configured devices and 
+    // * creates any scheduled jobs.
 	// ************************************************************************
 
 def installed() {
-	reset()						// The order here is important
-	configure()					// Since reports can start coming in even before we finish configure()
-	updateDisplay()
-	refresh()
+	log.debug "installed with settings: $settings"
+	configure()					// Send new configuration settings
+    reset()						// Clear all values in case there is space junk on screen
+	refresh()					// Force new measurements and update display
 }
 
 	// ************************************************************************
-	// * updated - to be reworked
+	// * updated() - Called when the preferences of an installed app are
+    // * updated. Typically unsubscribes and re-subscribes to events from the
+    // * configured devices and unschedules/reschedules jobs.
 	// ************************************************************************
 
 def updated() {
-	configure()
-	updateDisplay()
-	refresh()
+	log.debug "preferences updated with settings: $settings"
+	configure()					// Send new configuration settings
+	refresh()					// Force new measurements and update display
 }
 
 	// ************************************************************************
@@ -417,7 +426,7 @@ def updated() {
 	// ************************************************************************
 
 def parse(String description) {
-//	log.debug "Parse received ${description}"
+	log.debug "Parse received ${description}"
 	def result = null
 	def cmd = zwave.parse(description, [0x31: 1, 0x32: 1, 0x60: 3])
 	if (cmd) {
@@ -439,6 +448,13 @@ def zwaveEvent(physicalgraph.zwave.commands.meterv1.MeterReport cmd) {
 	def formattedValue
 	def MAX_AMPS = 220				// This exceeds typical residential split-phase panel amerage on purpose, cuts off values that are too high (fluke in reading)
 	def MAX_WATTS = 26400			// This exceeds typical residential split-phase panel power on purpose, cuts off values that are too high (fluke in reading)
+    def Integer vAdj = settings.vAdjustment as Integer
+    
+    // Just to be sure vAdj is 0 if preference was not set.
+    if (vAdj == null) {
+		vAdj = 0
+	}
+    
 
 	// def timeStamp =  new Date().format("HH:MM - dd-MMM-yy", location.timeZone)
 	if (cmd.meterType == 33) {
@@ -474,7 +490,7 @@ def zwaveEvent(physicalgraph.zwave.commands.meterv1.MeterReport cmd) {
 	}
 	else if (cmd.meterType == 161) {
 		if (cmd.scale == 0) {
-			newValue = Math.round(cmd.scaledMeterValue * 100) / 100
+			newValue = Math.round(cmd.scaledMeterValue * 100) / 100 + vAdj		// Round, add +/- adjustment
 			formattedValue = String.format("%5.1f", newValue)
 			if (formattedValue != state.V_L1_L2) {
 				sendEvent(name: "V_L1_L2", value: formattedValue, unit: "", descriptionText: "Display Voltage: ${formattedValue} V", displayed: false)              
@@ -541,7 +557,7 @@ def zwaveEvent(physicalgraph.zwave.commands.multichannelv3.MultiChannelCmdEncap 
 					}
 				} 
 				else if (encapsulatedCommand.scale == 4 ){
-					newValue = Math.round(encapsulatedCommand.scaledMeterValue * 100) / 100
+					newValue = Math.round(encapsulatedCommand.scaledMeterValue * 100) / 100 + vAdj		// Round, add +/- adjustment
 					formattedValue = String.format("%5.1f", newValue)
 					if (formattedValue != state.V_L1) {
 						state.V_L1 = formattedValue
@@ -586,7 +602,7 @@ def zwaveEvent(physicalgraph.zwave.commands.multichannelv3.MultiChannelCmdEncap 
 					}
 				}
 				else if (encapsulatedCommand.scale == 4 ){
-					newValue = Math.round(encapsulatedCommand.scaledMeterValue * 100) / 100
+					newValue = Math.round(encapsulatedCommand.scaledMeterValue * 100) / 100 + vAdj		// Round, add +/- adjustment
 					formattedValue = String.format("%5.1f", newValue)
 					if (formattedValue != state.V_L2) {
 						state.V_L2 = formattedValue
@@ -727,6 +743,7 @@ def resetCtr() {
 }
 
 
+
 	// ************************************************************************
     // * Configure the Aeon HEM device with desired settings
     // ************************************************************************
@@ -734,12 +751,14 @@ def resetCtr() {
 def configure() {
 	log.debug "configure()"
     
-	Long rg1Delay = settings.reportGroup1 as Long
-    Long rg2Delay = settings.reportGroup2 as Long
-    Long rg3Delay = settings.reportGroup3 as Long
+	Integer rg1Delay = settings.reportGroup1 as Integer
+    Integer rg2Delay = settings.reportGroup2 as Integer
+    Integer rg3Delay = settings.reportGroup3 as Integer
     
-    if (rg1Delay == null) {		// Shouldn't have to do this, but there seem to be initialization errors
-		rg1Delay = 120
+    // Do values need to be Hex? 0x78 is 120s
+    
+    if (rg1Delay == null) {
+		rg1Delay = 78
 	}
 
 	if (rg2Delay == null) {
@@ -747,7 +766,7 @@ def configure() {
 	}
     
     if (rg3Delay == null) {
-		rg3Delay = 10
+		rg3Delay = 78
 	}
     
     
@@ -763,6 +782,8 @@ def configure() {
 		112 The time interval of sending Report group 2 (Valid values 0x01-0xFFFFFFFF). Default: 0x00 00 00 78 Size: 4
 		113 The time interval of sending Report group 3 (Valid values 0x01-0xFFFFFFFF). Default: 0x00 00 00 78 Size: 4
 		*/
+        
+        // Disabled Report Group 3 as it is not needed. If enabled, that report is set to send EVERYTHING so use sparingly.
 
 		zwave.configurationV1.configurationSet(parameterNumber: 3, size: 1, scaledConfigurationValue: 0).format(),				// Disable (=0) selective reporting
 		//zwave.configurationV1.configurationSet(parameterNumber: 4, size: 2, scaledConfigurationValue: 5).format(),			// Don't send whole HEM unless watts have changed by 30
@@ -773,17 +794,16 @@ def configure() {
 		//zwave.configurationV1.configurationSet(parameterNumber: 10, size: 1, scaledConfigurationValue: 1).format(),			// Or by 5% (L2)
         
 		//zwave.configurationV1.configurationSet(parameterNumber: 100, size: 1, scaledConfigurationValue: 0).format(),			// reset to default 101 to 103
-		zwave.configurationV1.configurationSet(parameterNumber: 101, size: 4, scaledConfigurationValue: 6145).format(),   		// Report Group 1: Whole HEM and L1/L2 power in kWh
-		//zwave.configurationV1.configurationSet(parameterNumber: 101, size: 4, scaledConfigurationValue: 6149).format(),   	// Report Group 1: All L1/L2 kWh, total Volts & kWh
-		zwave.configurationV1.configurationSet(parameterNumber: 102, size: 4, scaledConfigurationValue: 1573646).format(),  	// Report Group 2: L1/L2 for Amps & Watts, Whole HEM for Amps, Watts, & Volts
-		//zwave.configurationV1.configurationSet(parameterNumber: 102, size: 4, scaledConfigurationValue: 1572872).format(),	// Report Group 2: Amps L1, L2, Total
-        zwave.configurationV1.configurationSet(parameterNumber: 103, size: 4, scaledConfigurationValue: 770).format(),			// Report Group 3: Power (Watts) L1, L2, Total
+		zwave.configurationV1.configurationSet(parameterNumber: 101, size: 4, scaledConfigurationValue: 1770255).format(),  	// Report Group 1: A/V/W for L1/L2/Whole HEM (L1+L2)
+		zwave.configurationV1.configurationSet(parameterNumber: 102, size: 4, scaledConfigurationValue: 6145).format(),			// Report Group 2: KWH for L1/L2/Whole HEM (L1+L2)
+		//zwave.configurationV1.configurationSet(parameterNumber: 103, size: 4, scaledConfigurationValue: 1776399).format(),	// Report Group 3: A/V/W/KWH for L1/L2/Whole HEM (L1+L2)
+        zwave.configurationV1.configurationSet(parameterNumber: 103, size: 4, scaledConfigurationValue: 0).format(),			// Report Group 3: A/V/W/KWH for L1/L2/Whole HEM (L1+L2)
 		zwave.configurationV1.configurationSet(parameterNumber: 111, size: 4, scaledConfigurationValue: rg1Delay).format(),	 	// Send Report Group 1 every x seconds
 		//zwave.configurationV1.configurationSet(parameterNumber: 111, size: 4, scaledConfigurationValue: 60).format(), 		// Send Report Group 1 every 60 seconds
 		zwave.configurationV1.configurationSet(parameterNumber: 112, size: 4, scaledConfigurationValue: rg2Delay).format(),		// Send Report Group 2 every x seconds
 		//zwave.configurationV1.configurationSet(parameterNumber: 112, size: 4, scaledConfigurationValue: 30).format(), 		// Send Report Group 2 every 30 seconds
 		zwave.configurationV1.configurationSet(parameterNumber: 113, size: 4, scaledConfigurationValue: rg3Delay).format() 		// Send Report Group 3 every x seconds
-        //zwave.configurationV1.configurationSet(parameterNumber: 113, size: 4, scaledConfigurationValue: 6).format() 			// Send Report Group 3 every 6 seconds
+        //zwave.configurationV1.configurationSet(parameterNumber: 113, size: 4, scaledConfigurationValue: 30).format() 			// Send Report Group 3 every 30 seconds
 	], 2000)																													// 2000ms delay between commands
 	log.debug cmd
 
