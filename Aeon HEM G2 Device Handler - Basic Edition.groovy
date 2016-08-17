@@ -54,6 +54,10 @@
  *
  *	History:
  * 
+ *	2016-08-16	- Commented out V_L1 and V_L2 code as there never are any values. null values were causing an 'ambiguity' error.
+ *				- Commented out ReportGroup3 code as it is disabled in configuration. Not necessary as RG1 and 2 give better control.
+ *				- Adding better ability to control what debug messages print to the log. Developers and non developers may have different needs.
+ *	2016-07-31: - Updated fingerprint to new format (possibly only implemented on Hub v2 at this time)
  *	2016-07-15:	- Basic functionality seems to work but lots more work is necessary
  *	2016-07-19:	- Change max values used for tile colors. I want the tile to be red before it gets to max values. If it goes beyond the
  *				  new lower max it will either just stay red. All steps in between are interpolated so this change just makes it transition
@@ -126,7 +130,31 @@ metadata {
 		//command "poll"
 
 		// Fingerprint for Aeon HEMv2, Second Generation
-		fingerprint deviceId: "0x3101", inClusters: "0x70,0x32,0x60,0x85,0x56,0x72,0x86"
+        //fingerprint deviceId: "0x3101", inClusters: "0x70,0x32,0x60,0x85,0x56,0x72,0x86"
+        
+        /*
+        Z-Wave Command Classes
+        Hex id from https://graph.api.smartthings.com/ide/doc/zwave-utils.html
+
+		Model: Home Energy Meter G2 (DSB28-ZWUS)
+		Z-Wave Certification Number: ZC08-12090011
+		Supported Command Classes 
+  
+        	0x85 Association 
+        	0x20 Basic 
+        	0x70 Configuration 
+        	0x56 CRC16 Encapsulation 
+        	0x72 Manufacturer Specific 
+        	0x32 Meter 
+        	0x60 Multi Channel 
+        	0x86 Version 
+
+        Raw description from IDE: zw:L type:3101 mfr:0086 prod:0002 model:001C ver:1.17 zwv:3.67 lib:03 cc:70,32,60,85,56,72,86 epc:2 ep:['3101 32']
+        */
+        
+        // New zwave fingerprint format for Aeon HEMv2, Second Generation (Hub v2 only as of Aug 2016)
+        fingerprint mfr: "0086", prod: "0002", model: "001C"
+        fingerprint type: "3101", cc: "70,32,60,85,56,72,86"
 	}
 
 	// simulator metadata
@@ -254,11 +282,11 @@ metadata {
 				"V_L1_L2",
 				label: '${currentValue} V', 
 				backgroundColors:[
-					[value: 115.6, 	color: "#ef221a"],
-					[value: 117.8, 	color: "#ffcc00"],
-					[value: 120.0, 	color: "#006600"],
-					[value: 122.2, 	color: "#ffcc00"],
-					[value: 124.4, 	color: "#ef221a"]
+					[value: 115.6, 	color: "#ef221a"],	// Red
+					[value: 117.8, 	color: "#ffcc00"],	// Yellow
+					[value: 120.0, 	color: "#006600"],	// Green
+					[value: 122.2, 	color: "#ffcc00"],	// Yellow
+					[value: 124.4, 	color: "#ef221a"]	// Red
 				]
 			)
 		}
@@ -383,15 +411,16 @@ metadata {
 	// Setting a default value (defaultValue: "foobar") for an input may render that selection in the mobile app,
 	// but the user still needs to enter data in that field. It’s recommended to not use defaultValue to avoid confusion.
 
-	// Stuff disabled below is not fully functional yet
+	// Stuff disabled below is not fully functional yet or needed
     
 	preferences {
 		//input name: "energyMeasurement", type: "enum", title: "Energy meter measurement?", options: ["kWh", "kVAh"], description: "Select measurement type", required: true, displayDuringSetup: true
-		input name: "reportGroup1", type: "number", title: "Update energy meter every x seconds", description: "Enter desired seconds", defaultValue: 78, displayDuringSetup: false
-		input name: "reportGroup2", type: "number", title: "Update all values every x seconds", description: "Enter desired seconds", defaultValue: 60, displayDuringSetup: false
-		input name: "reportGroup3", type: "number", title: "Update W & Total Power every x seconds", description: "Enter desired seconds", defaultValue: 78, displayDuringSetup: false
+		input name: "reportGroup1", type: "number", title: "Update A/V/W every x seconds", description: "Enter desired seconds", defaultValue: 60, displayDuringSetup: false
+		input name: "reportGroup2", type: "number", title: "Update kWh every x seconds", description: "Enter desired seconds", defaultValue: 78, displayDuringSetup: false
+		/*input name: "reportGroup3", type: "number", title: "Update A/V/W/KWH for L1/L2/Whole HEM (L1+L2) every x seconds", description: "Enter desired seconds", defaultValue: 78, displayDuringSetup: false*/ //Disabled configuration
         input name: "vAdjustment", type: "number", title: "Voltage adjustment (+/-x)", description: "Enter adjustment amount +/-x", defaultValue: 0, displayDuringSetup: false
-		//input "debugOnOff", type: "boolean", title: "Debug log messages", description: "", defaultValue: "off", displayDuringSetup: false
+		input "debugOnOff", type: "bool", title: "Debug log messages", description: "", defaultValue: "on", displayDuringSetup: false
+        input "devDebugOnOff", type: "bool", title: "Developer Debug log messages", description: "", defaultValue: "off", displayDuringSetup: false
 	}
 
 }
@@ -403,7 +432,7 @@ metadata {
 	// ************************************************************************
 
 def installed() {
-	log.debug "installed with settings: $settings"
+	log.debug "installed with settings: $settings"	//No code to enable/disable debug messages as this is run right after install.
 	configure()					// Send new configuration settings
     reset()						// Clear all values in case there is space junk on screen
 	refresh()					// Force new measurements and update display
@@ -416,7 +445,7 @@ def installed() {
 	// ************************************************************************
 
 def updated() {
-	log.debug "preferences updated with settings: $settings"
+	if (settings.devDebugOnOff == "on") {log.debug "preferences updated with settings: $settings"}
 	configure()					// Send new configuration settings
 	refresh()					// Force new measurements and update display
 }
@@ -426,14 +455,14 @@ def updated() {
 	// ************************************************************************
 
 def parse(String description) {
-	log.debug "Parse received ${description}"
+	if (settings.devDebugOnOff == "on") {log.debug "Parse received ${description}"}
 	def result = null
 	def cmd = zwave.parse(description, [0x31: 1, 0x32: 1, 0x60: 3])
 	if (cmd) {
 		result = createEvent(zwaveEvent(cmd))
 	}
 	if (result) { 
-		log.debug "Parse returned ${result?.descriptionText}"
+		if (settings.debugOnOff == "on") {log.debug "Parse returned ${result?.descriptionText}"}
 		return result
 	} else {
 	}
@@ -468,7 +497,7 @@ def zwaveEvent(physicalgraph.zwave.commands.meterv1.MeterReport cmd) {
 			}
 		} 
 		
-		else if (cmd.scale == 1) {
+		/*else if (cmd.scale == 1) {
 			newValue = Math.round(cmd.scaledMeterValue * 100) / 100
 			formattedValue = String.format("%5.1f", newValue)
 			if (newValue != state.E_L1_L2) {
@@ -476,7 +505,7 @@ def zwaveEvent(physicalgraph.zwave.commands.meterv1.MeterReport cmd) {
 				state.E_L1_L2 = formattedValue
 				[name: "energy", value: newValue, unit: "kVAh", descriptionText: "Total Energy: ${formattedValue} kVAh"]
 			}
-		}
+		}*/
 		else if (cmd.scale==2) {
 			newValue = Math.round(cmd.scaledMeterValue)
 			formattedValue = newValue as String
@@ -524,7 +553,7 @@ def zwaveEvent(physicalgraph.zwave.commands.multichannelv3.MultiChannelCmdEncap 
 			if (cmd.sourceEndPoint == 1) {
 				if (encapsulatedCommand.scale == 2 ) {
 					newValue = Math.round(encapsulatedCommand.scaledMeterValue)
-					if (newValue > MAX_WATTS) { return }											//Ignore values that are too high, definitely incorrect
+                    if (newValue > MAX_WATTS) { return }											//Ignore values that are too high, definitely incorrect
 					formattedValue = newValue as String
 					if (formattedValue != state.W_L1) {
 						state.W_L1 = formattedValue
@@ -555,15 +584,15 @@ def zwaveEvent(physicalgraph.zwave.commands.multichannelv3.MultiChannelCmdEncap 
 						state.A_L1 = formattedValue
 						[name: "A_L1", value: formattedValue, unit: "", descriptionText: "L1 Current: ${formattedValue} A"]
 					}
-				} 
-				else if (encapsulatedCommand.scale == 4 ){
+				}
+				/*else if (encapsulatedCommand.scale == 4 ){
 					newValue = Math.round(encapsulatedCommand.scaledMeterValue * 100) / 100 + vAdj		// Round, add +/- adjustment
 					formattedValue = String.format("%5.1f", newValue)
 					if (formattedValue != state.V_L1) {
 						state.V_L1 = formattedValue
 						[name: "V_L1", value: formattedValue, unit: "", descriptionText: "L1 Voltage: ${formattedValue} V"]
 					}
-				}               
+				}*/              
 			}
 			// This section handles values from Clamp 2 (EndPoint 2)
 			else if (cmd.sourceEndPoint == 2) {
@@ -575,7 +604,7 @@ def zwaveEvent(physicalgraph.zwave.commands.multichannelv3.MultiChannelCmdEncap 
 						state.W_L2 = formattedValue
 						[name: "W_L2", value: formattedValue, unit: "", descriptionText: "L2 Power: ${formattedValue} W"]
 					}
-				} 
+				}
 				else if (encapsulatedCommand.scale == 0 ){
 					newValue = Math.round(encapsulatedCommand.scaledMeterValue * 100) / 100
 					formattedValue = String.format("%5.1f", newValue)
@@ -583,7 +612,7 @@ def zwaveEvent(physicalgraph.zwave.commands.multichannelv3.MultiChannelCmdEncap 
 						state.E_L2 = formattedValue
 						[name: "E_L2", value: formattedValue, unit: "", descriptionText: "L2 Energy: ${formattedValue} kWh"]
 					}
-				} 
+				}
 				else if (encapsulatedCommand.scale == 1 ){
 					newValue = Math.round(encapsulatedCommand.scaledMeterValue * 100) / 100
 					formattedValue = String.format("%5.1f", newValue)
@@ -601,14 +630,14 @@ def zwaveEvent(physicalgraph.zwave.commands.multichannelv3.MultiChannelCmdEncap 
 						[name: "A_L2", value: formattedValue, unit: "", descriptionText: "L2 Current: ${formattedValue} A"]
 					}
 				}
-				else if (encapsulatedCommand.scale == 4 ){
+				/*else if (encapsulatedCommand.scale == 4 ){
 					newValue = Math.round(encapsulatedCommand.scaledMeterValue * 100) / 100 + vAdj		// Round, add +/- adjustment
 					formattedValue = String.format("%5.1f", newValue)
 					if (formattedValue != state.V_L2) {
 						state.V_L2 = formattedValue
 						[name: "V_L2", value: formattedValue, unit: "", descriptionText: "L2 Voltage: ${formattedValue} V"]
 					}
-				}
+				}*/
 			}
 		}
 	}
@@ -617,13 +646,13 @@ def zwaveEvent(physicalgraph.zwave.commands.multichannelv3.MultiChannelCmdEncap 
 
 def zwaveEvent(physicalgraph.zwave.Command cmd) {
 	// Handles all Z-Wave commands we aren't interested in
-	log.debug "Unhandled event ${cmd}"
+	if (settings.devDebugOnOff == "on") {log.debug "Unhandled event ${cmd}"}
 	[:]
 }
 
 // Read new values and display them on screen. Do not reset anything.
 def refresh() {
-	log.debug "refresh()"
+	if (settings.devDebugOnOff == "on") {log.debug "refresh()"}
 
 	newMeasurements()		// Read new values from meter
 	updateDisplay()			// Send new values to display
@@ -637,7 +666,7 @@ def poll() {
 */
 
 def updateDisplay() {
-	log.debug "updateDisplay() - E_L1_L2: ${state.E_L1_L2}"
+	if (settings.devDebugOnOff == "on") {log.debug "updateDisplay() - E_L1_L2: ${state.E_L1_L2} kWh"}	//change to any variable
 	
 	sendEvent(name: "V_L1_L2", value: state.V_L1_L2, unit: "")    
 	sendEvent(name: "V_L1", value: state.V_L1, unit: "")
@@ -688,7 +717,7 @@ def newMeasurements() {
     // ************************************************************************
 
 def reset() {
-	log.debug "reset()"
+	if (settings.devDebugOnOff == "on") {log.debug "reset()"}
 
     // Reset state attributes
     state.E_L1_L2 =	"0"
@@ -749,7 +778,7 @@ def resetCtr() {
     // ************************************************************************
 
 def configure() {
-	log.debug "configure()"
+	if (settings.devDebugOnOff == "on") {log.debug "configure()"}
     
 	Integer rg1Delay = settings.reportGroup1 as Integer
     Integer rg2Delay = settings.reportGroup2 as Integer
@@ -805,7 +834,7 @@ def configure() {
 		zwave.configurationV1.configurationSet(parameterNumber: 113, size: 4, scaledConfigurationValue: rg3Delay).format() 		// Send Report Group 3 every x seconds
         //zwave.configurationV1.configurationSet(parameterNumber: 113, size: 4, scaledConfigurationValue: 30).format() 			// Send Report Group 3 every 30 seconds
 	], 2000)																													// 2000ms delay between commands
-	log.debug cmd
+	if (settings.devDebugOnOff == "on") {log.debug "Configuration: ${cmd}"}
 
 	cmd
 }
