@@ -35,35 +35,28 @@
  *
  *	To Do:	- Possibly add back some of the min/max functionality but I am not sure how useful that would be
  *			- Add preference to switch from kWh to kVAh
- *			- Enable Debug on/off preference to declutter logs when debugging is not needed
  *			- Once debug on/off is enabled, add more debugging to help troubleshoot issues
- *			- Leg 1 and Leg 2 voltage measurement is not being read. Figure out configuration settings to make it work
- *			  even though I am not displaying the values
  *			- Check whether polling is needed, and enable if needed
  *			- Refresh and Configure button may not be necessary, evaluate and leave/remove as needed
- *			- Figure out whether I am making the best use of the capability defined attributes, or can I just ignore them?
- *			- Figure out Reporting Group 1, 2, and 3 - what is sent and how often. Goal: reduce network congestion
  *			- Report delays may require delay values in Hexadecimal so passing 120s might require entering 78. Reports seem to run too frequently
  *			- Figure out why at times the values in the tile are pushed down... ST bug or programming issue?
  *			- Why is tile text not resizing?
  *			- Tile color should go from green to yellow to red, rather than blue to red as values become to high or too low (only V).
- *			- Review foregroundColor and backgroundColor as it does not seem to be doing anything on some tiles. Fix or remove as needed.
- *			- My voltage measurement always seems a bit high, validate and add configurable +- offset to measured value
- *			- Verify W/A measurements using clamp meter on main panel. Add configurable +- offset to measured values
  *
  *
  *	History:
  * 
- *	2016-08-16	- Commented out V_L1 and V_L2 code as there never are any values. null values were causing an 'ambiguity' error.
- *				- Commented out ReportGroup3 code as it is disabled in configuration. Not necessary as RG1 and 2 give better control.
- *				- Adding better ability to control what debug messages print to the log. Developers and non developers may have different needs.
- *	2016-07-31: - Updated fingerprint to new format (possibly only implemented on Hub v2 at this time)
- *	2016-07-15:	- Basic functionality seems to work but lots more work is necessary
+  *	2016-07-15:	- Basic functionality seems to work but lots more work is necessary
  *	2016-07-19:	- Change max values used for tile colors. I want the tile to be red before it gets to max values. If it goes beyond the
  *				  new lower max it will either just stay red. All steps in between are interpolated so this change just makes it transition
  *				  to red sooner.
  *				- Got rid of all foreground color code as it does not do anything (on Android at the very least)
  *				- Added V adjustment in case the meter's readings are off
+ *	2016-07-31: - Updated fingerprint to new format (possibly only implemented on Hub v2 at this time)
+ *	2016-08-16	- Commented out V_L1 and V_L2 code as there never are any values. null values were causing an 'ambiguity' error.
+ *				- Commented out ReportGroup3 code as it is disabled in configuration. Not necessary as RG1 and 2 give better control.
+ *				- Adding better ability to control what debug messages print to the log. Developers and non developers may have different needs.
+ *				- Fixed "Recently" log. Icons now show for all log entries.
  *				- 
  *				- 
  *				- 
@@ -100,10 +93,10 @@ metadata {
 		capability "Refresh"
 		//capability "Polling"
 
-		attribute "energy",			"number"		// Sum of energy used on both legs, total energy used by house (defined by capability)
-		attribute "power",			"number"		// Sum of power from both legs, total power used by house (defined by capability)
-		attribute "amps",			"number"		// Sum of amperage from both legs, total power used by house (defined by capability)
-		attribute "volts",			"number"		// Volts of both legs, total power used by house (defined by capability)
+		//attribute "energy",			"number"		// Sum of energy used on both legs, total energy used by house (defined by capability)
+		//attribute "power",			"number"		// Sum of power from both legs, total power used by house (defined by capability)
+		//attribute "amps",			"number"		// Sum of amperage from both legs, total power used by house (defined by capability)
+		//attribute "volts",			"number"		// Volts of both legs, total power used by house (defined by capability)
         
 		attribute "E_L1_L2",		"string"		// Sum of energy (kWh) used on both legs, total energy used by house
 		attribute "E_L1",			"string"		// Energy from leg 1
@@ -114,8 +107,8 @@ metadata {
 		attribute "W_L2",			"string"		// Power from leg 2
 
 		attribute "V_L1_L2",		"string"		// Volts for leg 1 and 2 - voltage on L1 and L2 should always be the same, if not there is an issue!
-		attribute "V_L1",			"string"		// Voltage on leg 1
-		attribute "V_L2",			"string"		// Voltage on leg 2
+		//attribute "V_L1",			"string"		// Voltage on leg 1
+		//attribute "V_L2",			"string"		// Voltage on leg 2
 
 		attribute "A_L1_L2",		"string"		// Sum of amerage used on both legs, total amperage used by house
 		attribute "A_L1",			"string"		// Amperage for leg 1
@@ -513,7 +506,8 @@ def zwaveEvent(physicalgraph.zwave.commands.meterv1.MeterReport cmd) {
 			if (formattedValue != state.W_L1_L2) {
 				sendEvent(name: "W_L1_L2", value: formattedValue, unit: "", descriptionText: "Display Power: ${newValue} W", displayed: false)
 				state.W_L1_L2 = formattedValue
-				[name: "power", value: newValue, unit: "W", descriptionText: "Total Power: ${newValue} W"]
+				[name: "W_L1_L2", value: newValue, unit: "W", descriptionText: "Total Power: ${newValue} W"] // This makes mini tile appear in "Recently" log
+                //[name: "power", value: newValue, unit: "W", descriptionText: "Total Power: ${newValue} W"] //Likely can be deleted if correction above doesn't break anything
 			}
 		}
 	}
@@ -524,7 +518,8 @@ def zwaveEvent(physicalgraph.zwave.commands.meterv1.MeterReport cmd) {
 			if (formattedValue != state.V_L1_L2) {
 				sendEvent(name: "V_L1_L2", value: formattedValue, unit: "", descriptionText: "Display Voltage: ${formattedValue} V", displayed: false)              
 				state.V_L1_L2 = formattedValue
-				[name: "volts", value: newValue, unit: "V", descriptionText: "Volts: ${formattedValue} V"]
+				[name: "V_L1_L2", value: newValue, unit: "V", descriptionText: "Volts: ${formattedValue} V"] // This makes mini tile appear in "Recently" log
+                //[name: "volts", value: newValue, unit: "V", descriptionText: "Volts: ${formattedValue} V"] //Likely can be deleted if correction above doesn't break anything
 			}
 		}
 		else if (cmd.scale==1) {
@@ -534,7 +529,8 @@ def zwaveEvent(physicalgraph.zwave.commands.meterv1.MeterReport cmd) {
 			if (formattedValue != state.A_L1_L2) {
 				sendEvent(name: "A_L1_L2", value: formattedValue, unit: "", descriptionText: "Display Current: ${formattedValue}", displayed: false)              
 				state.A_L1_L2 = formattedValue
-				[name: "amps", value: newValue, unit: "A", descriptionText: "Total Current: ${formattedValue} A"]
+                [name: "A_L1_L2", value: newValue, unit: "A", descriptionText: "Total Current: ${formattedValue} A"] // This makes mini tile appear in "Recently" log
+				//[name: "amps", value: newValue, unit: "A", descriptionText: "Total Current: ${formattedValue} A"] //Likely can be deleted if correction above doesn't break anything
 			}
 		}
 	}           
@@ -669,8 +665,8 @@ def updateDisplay() {
 	if (settings.devDebugOnOff == "on") {log.debug "updateDisplay() - E_L1_L2: ${state.E_L1_L2} kWh"}	//change to any variable
 	
 	sendEvent(name: "V_L1_L2", value: state.V_L1_L2, unit: "")    
-	sendEvent(name: "V_L1", value: state.V_L1, unit: "")
-	sendEvent(name: "V_L2", value: state.V_L2, unit: "")
+	//sendEvent(name: "V_L1", value: state.V_L1, unit: "")
+	//sendEvent(name: "V_L2", value: state.V_L2, unit: "")
 
 	sendEvent(name: "W_L1_L2", value: state.W_L1_L2, unit: "")
 	sendEvent(name: "W_L1", value: state.W_L1, unit: "")     
@@ -730,8 +726,8 @@ def reset() {
     state.A_L1 =	"0"
     state.A_L2 =	"0"
     state.V_L1_L2 =	"0"
-    state.V_L1 =	"0"
-    state.V_L2 =	"0"
+    //state.V_L1 =	"0"
+    //state.V_L2 =	"0"
 	
     // Clear tiles
 	sendEvent(name: "E_L1_L2",		value: "", unit: "")
@@ -744,8 +740,8 @@ def reset() {
     sendEvent(name: "A_L1",			value: "", unit: "")
     sendEvent(name: "A_L2",			value: "", unit: "")
     sendEvent(name: "V_L1_L2",		value: "", unit: "")
-    sendEvent(name: "V_L1",			value: "", unit: "")
-    sendEvent(name: "V_L2",			value: "", unit: "")
+    //sendEvent(name: "V_L1",			value: "", unit: "")
+    //sendEvent(name: "V_L2",			value: "", unit: "")
 	sendEvent(name: "resetDate",	value: "", unit: "")
     
     configure()											// Send configuration parameters
@@ -758,7 +754,7 @@ def reset() {
 
 // Reset the energy counter and the date tracking the last reset
 def resetCtr() {
-
+	if (settings.devDebugOnOff == "on") {log.debug "resetCtr()"}
     def dateString = new Date().format("dd-MMM-yy", location.timeZone)
     //def timeString = new Date().format("HH:MM", location.timeZone)    // Leaving this here just in case I want to add time as well
 
@@ -812,7 +808,7 @@ def configure() {
 		113 The time interval of sending Report group 3 (Valid values 0x01-0xFFFFFFFF). Default: 0x00 00 00 78 Size: 4
 		*/
         
-        // Disabled Report Group 3 as it is not needed. If enabled, that report is set to send EVERYTHING so use sparingly.
+        // Disabled Report Group 3 as it is not needed. If enabled, that report is set to send EVERYTHING that is already sent by RG1 and RG2.
 
 		zwave.configurationV1.configurationSet(parameterNumber: 3, size: 1, scaledConfigurationValue: 0).format(),				// Disable (=0) selective reporting
 		//zwave.configurationV1.configurationSet(parameterNumber: 4, size: 2, scaledConfigurationValue: 5).format(),			// Don't send whole HEM unless watts have changed by 30
@@ -828,9 +824,9 @@ def configure() {
 		//zwave.configurationV1.configurationSet(parameterNumber: 103, size: 4, scaledConfigurationValue: 1776399).format(),	// Report Group 3: A/V/W/KWH for L1/L2/Whole HEM (L1+L2)
         zwave.configurationV1.configurationSet(parameterNumber: 103, size: 4, scaledConfigurationValue: 0).format(),			// Report Group 3: A/V/W/KWH for L1/L2/Whole HEM (L1+L2)
 		zwave.configurationV1.configurationSet(parameterNumber: 111, size: 4, scaledConfigurationValue: rg1Delay).format(),	 	// Send Report Group 1 every x seconds
-		//zwave.configurationV1.configurationSet(parameterNumber: 111, size: 4, scaledConfigurationValue: 60).format(), 		// Send Report Group 1 every 60 seconds
+		//zwave.configurationV1.configurationSet(parameterNumber: 111, size: 4, scaledConfigurationValue: 30).format(), 		// Send Report Group 1 every 30 seconds
 		zwave.configurationV1.configurationSet(parameterNumber: 112, size: 4, scaledConfigurationValue: rg2Delay).format(),		// Send Report Group 2 every x seconds
-		//zwave.configurationV1.configurationSet(parameterNumber: 112, size: 4, scaledConfigurationValue: 30).format(), 		// Send Report Group 2 every 30 seconds
+		//zwave.configurationV1.configurationSet(parameterNumber: 112, size: 4, scaledConfigurationValue: 60).format(), 		// Send Report Group 2 every 60 seconds
 		zwave.configurationV1.configurationSet(parameterNumber: 113, size: 4, scaledConfigurationValue: rg3Delay).format() 		// Send Report Group 3 every x seconds
         //zwave.configurationV1.configurationSet(parameterNumber: 113, size: 4, scaledConfigurationValue: 30).format() 			// Send Report Group 3 every 30 seconds
 	], 2000)																													// 2000ms delay between commands
