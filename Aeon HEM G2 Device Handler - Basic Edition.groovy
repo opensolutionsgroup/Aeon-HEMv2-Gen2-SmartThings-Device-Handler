@@ -57,9 +57,9 @@
  *				- Commented out ReportGroup3 code as it is disabled in configuration. Not necessary as RG1 and 2 give better control.
  *				- Adding better ability to control what debug messages print to the log. Developers and non developers may have different needs.
  *				- Fixed "Recently" log. Icons now show for all log entries.
- *				- 
- *				- 
- *				- 
+ *	2016-09-15	- Got rid of decimal values for voltage tile coloring as it was really unnecessary
+ *				- Few minor changes to help with debugging why the DTH stops reporting data on occasion. Research whether it is large W numebrs over 10k.
+ *				- Added code to convert report group delay integers to hex
  *				- 
  *				- 
  *
@@ -95,7 +95,7 @@ metadata {
 
 		//attribute "energy",			"number"		// Sum of energy used on both legs, total energy used by house (defined by capability)
 		//attribute "power",			"number"		// Sum of power from both legs, total power used by house (defined by capability)
-		//attribute "amps",			"number"		// Sum of amperage from both legs, total power used by house (defined by capability)
+		//attribute "amps",				"number"		// Sum of amperage from both legs, total power used by house (defined by capability)
 		//attribute "volts",			"number"		// Volts of both legs, total power used by house (defined by capability)
         
 		attribute "E_L1_L2",		"string"		// Sum of energy (kWh) used on both legs, total energy used by house
@@ -153,11 +153,11 @@ metadata {
 	// simulator metadata
 	simulator {
 		for (int i = 0; i <= 10000; i += 1000) {
-			status "power  ${i} W": new physicalgraph.zwave.Zwave().meterV1.meterReport(
+			status "W_L1_L2  ${i} W": new physicalgraph.zwave.Zwave().meterV1.meterReport(
 				scaledMeterValue: i, precision: 3, meterType: 33, scale: 2, size: 4).incomingMessage()
 		}
 		for (int i = 0; i <= 100; i += 10) {
-			status "energy  ${i} kWh": new physicalgraph.zwave.Zwave().meterV1.meterReport(
+			status "E_L1_L2  ${i} kWh": new physicalgraph.zwave.Zwave().meterV1.meterReport(
 				scaledMeterValue: i, precision: 3, meterType: 33, scale: 0, size: 4).incomingMessage()
 		}
 	}
@@ -275,11 +275,11 @@ metadata {
 				"V_L1_L2",
 				label: '${currentValue} V', 
 				backgroundColors:[
-					[value: 115.6, 	color: "#ef221a"],	// Red
-					[value: 117.8, 	color: "#ffcc00"],	// Yellow
-					[value: 120.0, 	color: "#006600"],	// Green
-					[value: 122.2, 	color: "#ffcc00"],	// Yellow
-					[value: 124.4, 	color: "#ef221a"]	// Red
+					[value: 116, 	color: "#ef221a"],	// Red
+					[value: 118, 	color: "#ffcc00"],	// Yellow
+					[value: 120, 	color: "#006600"],	// Green
+					[value: 122, 	color: "#ffcc00"],	// Yellow
+					[value: 124, 	color: "#ef221a"]	// Red
 				]
 			)
 		}
@@ -484,29 +484,32 @@ def zwaveEvent(physicalgraph.zwave.commands.meterv1.MeterReport cmd) {
 			newValue = Math.round(cmd.scaledMeterValue * 100) / 100
 			formattedValue = String.format("%5.1f", newValue)
 			if (formattedValue != state.E_L1_L2) {
-				sendEvent(name: "E_L1_L2", value: formattedValue, unit: "", descriptionText: "Display Energy: ${newValue} kWh", displayed: false)
+				sendEvent(name: "E_L1_L2", value: formattedValue, unit: "", descriptionText: "Total Energy: ${formattedValue} kWh"/*, displayed: false*/)
 				state.E_L1_L2 = formattedValue
-				[name: "energy", value: newValue, unit: "kWh", descriptionText: "Total Energy: ${formattedValue} kWh"]
+				[name: "E_L1_L2", value: newValue, unit: "kWh", descriptionText: "Total Energy: ${formattedValue} kWh"]
+                //[name: "energy", value: newValue, unit: "kWh", descriptionText: "Total Energy: ${formattedValue} kWh"]
 			}
 		} 
 		
-		/*else if (cmd.scale == 1) {
-			newValue = Math.round(cmd.scaledMeterValue * 100) / 100
+		else if (cmd.scale == 1) {
+        	if (settings.devDebugOnOff == "on") {log.debug "This section of code was commented out - Err1"}
+			/* Do nothing as the DTH is not handling kVA
+            newValue = Math.round(cmd.scaledMeterValue * 100) / 100
 			formattedValue = String.format("%5.1f", newValue)
 			if (newValue != state.E_L1_L2) {
 				sendEvent(name: "E_L1_L2", value: formattedValue, unit: "", descriptionText: "Display Energy: ${formattedValue} kVAh", displayed: false)
 				state.E_L1_L2 = formattedValue
 				[name: "energy", value: newValue, unit: "kVAh", descriptionText: "Total Energy: ${formattedValue} kVAh"]
-			}
-		}*/
+			}*/
+		}
 		else if (cmd.scale==2) {
 			newValue = Math.round(cmd.scaledMeterValue)
 			formattedValue = newValue as String
 			if (newValue > MAX_WATTS) { return }
 			if (formattedValue != state.W_L1_L2) {
-				sendEvent(name: "W_L1_L2", value: formattedValue, unit: "", descriptionText: "Display Power: ${newValue} W", displayed: false)
+				sendEvent(name: "W_L1_L2", value: formattedValue, unit: "", descriptionText: "Total Power: ${formattedValue} W"/*, displayed: false*/)
 				state.W_L1_L2 = formattedValue
-				[name: "W_L1_L2", value: newValue, unit: "W", descriptionText: "Total Power: ${newValue} W"] // This makes mini tile appear in "Recently" log
+				[name: "W_L1_L2", value: formattedValue, unit: "W", descriptionText: "Total Power: ${formattedValue} W"] // This makes mini tile appear in "Recently" log <<< not working, why??
                 //[name: "power", value: newValue, unit: "W", descriptionText: "Total Power: ${newValue} W"] //Likely can be deleted if correction above doesn't break anything
 			}
 		}
@@ -516,9 +519,9 @@ def zwaveEvent(physicalgraph.zwave.commands.meterv1.MeterReport cmd) {
 			newValue = Math.round(cmd.scaledMeterValue * 100) / 100 + vAdj		// Round, add +/- adjustment
 			formattedValue = String.format("%5.1f", newValue)
 			if (formattedValue != state.V_L1_L2) {
-				sendEvent(name: "V_L1_L2", value: formattedValue, unit: "", descriptionText: "Display Voltage: ${formattedValue} V", displayed: false)              
+				sendEvent(name: "V_L1_L2", value: formattedValue, unit: "", descriptionText: "Voltage: ${formattedValue} V"/*, displayed: false*/)              
 				state.V_L1_L2 = formattedValue
-				[name: "V_L1_L2", value: newValue, unit: "V", descriptionText: "Volts: ${formattedValue} V"] // This makes mini tile appear in "Recently" log
+				[name: "V_L1_L2", value: formattedValue, unit: "V", descriptionText: "Volts: ${formattedValue} V"] // This makes mini tile appear in "Recently" log
                 //[name: "volts", value: newValue, unit: "V", descriptionText: "Volts: ${formattedValue} V"] //Likely can be deleted if correction above doesn't break anything
 			}
 		}
@@ -527,9 +530,9 @@ def zwaveEvent(physicalgraph.zwave.commands.meterv1.MeterReport cmd) {
 			if (newValue > MAX_AMPS) { return }
 			formattedValue = String.format("%5.1f", newValue)
 			if (formattedValue != state.A_L1_L2) {
-				sendEvent(name: "A_L1_L2", value: formattedValue, unit: "", descriptionText: "Display Current: ${formattedValue}", displayed: false)              
+				sendEvent(name: "A_L1_L2", value: formattedValue, unit: "", descriptionText: "Total Current: ${formattedValue} A"/*, displayed: false*/)              
 				state.A_L1_L2 = formattedValue
-                [name: "A_L1_L2", value: newValue, unit: "A", descriptionText: "Total Current: ${formattedValue} A"] // This makes mini tile appear in "Recently" log
+                [name: "A_L1_L2", value: formattedValue, unit: "A", descriptionText: "Total Current: ${formattedValue} A"] // This makes mini tile appear in "Recently" log
 				//[name: "amps", value: newValue, unit: "A", descriptionText: "Total Current: ${formattedValue} A"] //Likely can be deleted if correction above doesn't break anything
 			}
 		}
@@ -565,12 +568,14 @@ def zwaveEvent(physicalgraph.zwave.commands.multichannelv3.MultiChannelCmdEncap 
 					}
 				}
 				else if (encapsulatedCommand.scale == 1 ){
-					newValue = Math.round(encapsulatedCommand.scaledMeterValue * 100) / 100
+                	if (settings.devDebugOnOff == "on") {log.debug "This section of code was commented out - Err2"}
+					/*
+                    newValue = Math.round(encapsulatedCommand.scaledMeterValue * 100) / 100
 					formattedValue = String.format("%5.1f", newValue)
 					if (formattedValue != state.E_L1) {
 						state.E_L1 = formattedValue
 						[name: "E_L1", value: formattedValue, unit: "", descriptionText: "L1 Energy: ${formattedValue} kVAh"]
-					}
+					}*/
 				}
 				else if (encapsulatedCommand.scale == 5 ) {
 					newValue = Math.round(encapsulatedCommand.scaledMeterValue * 100) / 100
@@ -581,14 +586,16 @@ def zwaveEvent(physicalgraph.zwave.commands.multichannelv3.MultiChannelCmdEncap 
 						[name: "A_L1", value: formattedValue, unit: "", descriptionText: "L1 Current: ${formattedValue} A"]
 					}
 				}
-				/*else if (encapsulatedCommand.scale == 4 ){
+				else if (encapsulatedCommand.scale == 4 ){
+                	if (settings.devDebugOnOff == "on") {log.debug "This section of code was commented out - Err3"}
+                    /*
 					newValue = Math.round(encapsulatedCommand.scaledMeterValue * 100) / 100 + vAdj		// Round, add +/- adjustment
 					formattedValue = String.format("%5.1f", newValue)
 					if (formattedValue != state.V_L1) {
 						state.V_L1 = formattedValue
 						[name: "V_L1", value: formattedValue, unit: "", descriptionText: "L1 Voltage: ${formattedValue} V"]
-					}
-				}*/              
+					}*/
+				}          
 			}
 			// This section handles values from Clamp 2 (EndPoint 2)
 			else if (cmd.sourceEndPoint == 2) {
@@ -626,14 +633,16 @@ def zwaveEvent(physicalgraph.zwave.commands.multichannelv3.MultiChannelCmdEncap 
 						[name: "A_L2", value: formattedValue, unit: "", descriptionText: "L2 Current: ${formattedValue} A"]
 					}
 				}
-				/*else if (encapsulatedCommand.scale == 4 ){
+				else if (encapsulatedCommand.scale == 4 ){
+                	if (settings.devDebugOnOff == "on") {log.debug "This section of code was commented out - Err1"}
+                    /*
 					newValue = Math.round(encapsulatedCommand.scaledMeterValue * 100) / 100 + vAdj		// Round, add +/- adjustment
 					formattedValue = String.format("%5.1f", newValue)
 					if (formattedValue != state.V_L2) {
 						state.V_L2 = formattedValue
 						[name: "V_L2", value: formattedValue, unit: "", descriptionText: "L2 Voltage: ${formattedValue} V"]
-					}
-				}*/
+					}*/
+				}
 			}
 		}
 	}
@@ -776,6 +785,9 @@ def resetCtr() {
 def configure() {
 	if (settings.devDebugOnOff == "on") {log.debug "configure()"}
     
+    //String hex = Integer.toHexString(val);
+	//int parsedResult = (int) Long.parseLong(hex, 16);
+    
 	Integer rg1Delay = settings.reportGroup1 as Integer
     Integer rg2Delay = settings.reportGroup2 as Integer
     Integer rg3Delay = settings.reportGroup3 as Integer
@@ -783,7 +795,7 @@ def configure() {
     // Do values need to be Hex? 0x78 is 120s
     
     if (rg1Delay == null) {
-		rg1Delay = 78
+		rg1Delay = 120
 	}
 
 	if (rg2Delay == null) {
@@ -791,8 +803,14 @@ def configure() {
 	}
     
     if (rg3Delay == null) {
-		rg3Delay = 78
+		rg3Delay = 120
 	}
+    
+    String str_rg1Delay = Integer.toHexString(rg1Delay)
+    String str_rg2Delay = Integer.toHexString(rg2Delay)
+    String str_rg3Delay = Integer.toHexString(rg3Delay)
+    
+
     
     
 	def cmd = delayBetween([
@@ -823,11 +841,11 @@ def configure() {
 		zwave.configurationV1.configurationSet(parameterNumber: 102, size: 4, scaledConfigurationValue: 6145).format(),			// Report Group 2: KWH for L1/L2/Whole HEM (L1+L2)
 		//zwave.configurationV1.configurationSet(parameterNumber: 103, size: 4, scaledConfigurationValue: 1776399).format(),	// Report Group 3: A/V/W/KWH for L1/L2/Whole HEM (L1+L2)
         zwave.configurationV1.configurationSet(parameterNumber: 103, size: 4, scaledConfigurationValue: 0).format(),			// Report Group 3: A/V/W/KWH for L1/L2/Whole HEM (L1+L2)
-		zwave.configurationV1.configurationSet(parameterNumber: 111, size: 4, scaledConfigurationValue: rg1Delay).format(),	 	// Send Report Group 1 every x seconds
+		zwave.configurationV1.configurationSet(parameterNumber: 111, size: 4, scaledConfigurationValue: str_rg1Delay).format(),	// Send Report Group 1 every x seconds
 		//zwave.configurationV1.configurationSet(parameterNumber: 111, size: 4, scaledConfigurationValue: 30).format(), 		// Send Report Group 1 every 30 seconds
-		zwave.configurationV1.configurationSet(parameterNumber: 112, size: 4, scaledConfigurationValue: rg2Delay).format(),		// Send Report Group 2 every x seconds
+		zwave.configurationV1.configurationSet(parameterNumber: 112, size: 4, scaledConfigurationValue: str_rg2Delay).format(),	// Send Report Group 2 every x seconds
 		//zwave.configurationV1.configurationSet(parameterNumber: 112, size: 4, scaledConfigurationValue: 60).format(), 		// Send Report Group 2 every 60 seconds
-		zwave.configurationV1.configurationSet(parameterNumber: 113, size: 4, scaledConfigurationValue: rg3Delay).format() 		// Send Report Group 3 every x seconds
+		zwave.configurationV1.configurationSet(parameterNumber: 113, size: 4, scaledConfigurationValue: str_rg3Delay).format() 	// Send Report Group 3 every x seconds
         //zwave.configurationV1.configurationSet(parameterNumber: 113, size: 4, scaledConfigurationValue: 30).format() 			// Send Report Group 3 every 30 seconds
 	], 2000)																													// 2000ms delay between commands
 	if (settings.devDebugOnOff == "on") {log.debug "Configuration: ${cmd}"}
