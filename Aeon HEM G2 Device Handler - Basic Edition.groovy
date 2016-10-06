@@ -1,6 +1,6 @@
 /**
  *	Aeon Home Energy Meter v2 Gen2 Basic Edition
- *	Version: 0.9b
+ *	Version: 0.9d
  *
  *	Disclaimer: This WILL NOT work with Aeon's HEM Gen1 or Gen5 (latest version) as is intended to be used for HEMs
  *				installed on the typical 200A 240V split-phase US residential systems (Two 120V legs and a neutral -
@@ -26,20 +26,20 @@
  *	Goal:	I removed all support for v1 (sorry!) to keep the code simple and pertinent to what I thought was the latest
  *			version of the HEM - v2, but I just realized Aeon released Gen5 with zwave plus. I wanted to have a device
  *			handler that fully supported Android as I would never even dream of buying any Apple products! I also wanted
- *			a way to keep track of my usage to get the best deal out of my energy provier's contract. Calculating cost
+ *			a way to keep track of my usage to get the best deal out of my energy provider's contract. Calculating cost
  *			was of no use to me given the price per kWh changes based on my consumption. In my case, if I am between
- *			1000kWh and 2000kWh in a sinlgle month, I get a $100 credit on my account so this device handler just has a
- *			counter you can reset monthly. Last, I removed one of the digits after the decimal as it is generally superfluos
+ *			1000kWh and 2000kWh in a single month, I get a $100 credit on my account so this device handler just has a
+ *			counter you can reset monthly. Last, I removed one of the digits after the decimal as it is generally superfluous
  *			for typical HEM applications and it is also likely that the accuracy of the HEM doesn't guarantee the accuracy of
- *			the measurement anyway (at least not over time given there is no calibration feature).
+ *			the measurement anyway (at least not over time given there is no calibration feature). In other words the extra digit
+ *			is of no use if not accurate.
  *
  *	To Do:	- Possibly add back some of the min/max functionality but I am not sure how useful that would be
  *			- Add preference to switch from kWh to kVAh
  *			- Once debug on/off is enabled, add more debugging to help troubleshoot issues
  *			- Check whether polling is needed, and enable if needed
  *			- Refresh and Configure button may not be necessary, evaluate and leave/remove as needed
- *			- Report delays may require delay values in Hexadecimal so passing 120s might require entering 78. Reports seem to run too frequently
- *			- Figure out why at times the values in the tile are pushed down... ST bug or programming issue?
+ *			- Figure out why at times the values in the tile are pushed down... ST bug or programming issue? ST Android app bug from what I have read...
  *			- Why is tile text not resizing?
  *			- Tile color should go from green to yellow to red, rather than blue to red as values become to high or too low (only V).
  *
@@ -60,7 +60,7 @@
  *	2016-09-15	- Got rid of decimal values for voltage tile coloring as it was really unnecessary
  *				- Few minor changes to help with debugging why the DTH stops reporting data on occasion. Research whether it is large W numebrs over 10k.
  *				- Added code to convert report group delay integers to hex
- *				- 
+ *	2016-10-05	- Changed V/W/A/kWh variables from string to number (they are numbers after all!) in hopes it might fix the occasional freezing issue.
  *				- 
  *
  *	Disclaimer 2:	I am NOT a developer. I learn as I go so please do NOT rely on this for anything critical. Use it and
@@ -98,21 +98,21 @@ metadata {
 		//attribute "amps",				"number"		// Sum of amperage from both legs, total power used by house (defined by capability)
 		//attribute "volts",			"number"		// Volts of both legs, total power used by house (defined by capability)
         
-		attribute "E_L1_L2",		"string"		// Sum of energy (kWh) used on both legs, total energy used by house
-		attribute "E_L1",			"string"		// Energy from leg 1
-		attribute "E_L2",			"string"		// Energy from leg 2
+		attribute "E_L1_L2",		"number"		// Sum of energy (kWh) used on both legs, total energy used by house
+		attribute "E_L1",			"number"		// Energy from leg 1
+		attribute "E_L2",			"number"		// Energy from leg 2
 
-		attribute "W_L1_L2",		"string"		// Sum of power from both legs, total power used by house
-		attribute "W_L1",			"string"		// Power from leg 1
-		attribute "W_L2",			"string"		// Power from leg 2
+		attribute "W_L1_L2",		"number"		// Sum of power from both legs, total power used by house
+		attribute "W_L1",			"number"		// Power from leg 1
+		attribute "W_L2",			"number"		// Power from leg 2
 
-		attribute "V_L1_L2",		"string"		// Volts for leg 1 and 2 - voltage on L1 and L2 should always be the same, if not there is an issue!
+		attribute "V_L1_L2",		"number"		// Volts for leg 1 and 2 - voltage on L1 and L2 should always be the same, if not there is an issue!
 		//attribute "V_L1",			"string"		// Voltage on leg 1
 		//attribute "V_L2",			"string"		// Voltage on leg 2
 
-		attribute "A_L1_L2",		"string"		// Sum of amerage used on both legs, total amperage used by house
-		attribute "A_L1",			"string"		// Amperage for leg 1
-		attribute "A_L2",			"string"        // Amperage for leg 2
+		attribute "A_L1_L2",		"number"		// Sum of amerage used on both legs, total amperage used by house
+		attribute "A_L1",			"number"		// Amperage for leg 1
+		attribute "A_L2",			"number"        // Amperage for leg 2
 
 		attribute "resetDate",		"string"		// Date kWh was reset. This helps keep track consumption is sync with power company meter readings
 
@@ -142,7 +142,7 @@ metadata {
         	0x60 Multi Channel 
         	0x86 Version 
 
-        Raw description from IDE: zw:L type:3101 mfr:0086 prod:0002 model:001C ver:1.17 zwv:3.67 lib:03 cc:70,32,60,85,56,72,86 epc:2 ep:['3101 32']
+        Raw description from IDE: 	zw:L type:3101 mfr:0086 prod:0002 model:001C ver:1.17 zwv:3.67 lib:03 cc:70,32,60,85,56,72,86 epc:2 ep:['3101 32']
         */
         
         // New zwave fingerprint format for Aeon HEMv2, Second Generation (Hub v2 only as of Aug 2016)
@@ -483,10 +483,10 @@ def zwaveEvent(physicalgraph.zwave.commands.meterv1.MeterReport cmd) {
 		if (cmd.scale == 0) {
 			newValue = Math.round(cmd.scaledMeterValue * 100) / 100
 			formattedValue = String.format("%5.1f", newValue)
-			if (formattedValue != state.E_L1_L2) {
+			if (newValue != state.E_L1_L2) {
 				sendEvent(name: "E_L1_L2", value: formattedValue, unit: "", descriptionText: "Total Energy: ${formattedValue} kWh"/*, displayed: false*/)
-				state.E_L1_L2 = formattedValue
-				[name: "E_L1_L2", value: newValue, unit: "kWh", descriptionText: "Total Energy: ${formattedValue} kWh"]
+				state.E_L1_L2 = newValue
+				[name: "E_L1_L2", value: formattedValue, unit: "kWh", descriptionText: "Total Energy: ${formattedValue} kWh"]
                 //[name: "energy", value: newValue, unit: "kWh", descriptionText: "Total Energy: ${formattedValue} kWh"]
 			}
 		} 
@@ -505,10 +505,11 @@ def zwaveEvent(physicalgraph.zwave.commands.meterv1.MeterReport cmd) {
 		else if (cmd.scale==2) {
 			newValue = Math.round(cmd.scaledMeterValue)
 			formattedValue = newValue as String
-			if (newValue > MAX_WATTS) { return }
-			if (formattedValue != state.W_L1_L2) {
+			if (newValue > MAX_WATTS) { return }		// Filter values that are too high, thus errors (To do: surely better way of doing this...)
+            if (newValue < 0) { return }				// Filter anything below zero, thus errors (To do: surely better way of doing this...)
+			if (newValue != state.W_L1_L2) {
 				sendEvent(name: "W_L1_L2", value: formattedValue, unit: "", descriptionText: "Total Power: ${formattedValue} W"/*, displayed: false*/)
-				state.W_L1_L2 = formattedValue
+				state.W_L1_L2 = newValue
 				[name: "W_L1_L2", value: formattedValue, unit: "W", descriptionText: "Total Power: ${formattedValue} W"] // This makes mini tile appear in "Recently" log <<< not working, why??
                 //[name: "power", value: newValue, unit: "W", descriptionText: "Total Power: ${newValue} W"] //Likely can be deleted if correction above doesn't break anything
 			}
@@ -518,9 +519,9 @@ def zwaveEvent(physicalgraph.zwave.commands.meterv1.MeterReport cmd) {
 		if (cmd.scale == 0) {
 			newValue = Math.round(cmd.scaledMeterValue * 100) / 100 + vAdj		// Round, add +/- adjustment
 			formattedValue = String.format("%5.1f", newValue)
-			if (formattedValue != state.V_L1_L2) {
+			if (newValue != state.V_L1_L2) {
 				sendEvent(name: "V_L1_L2", value: formattedValue, unit: "", descriptionText: "Voltage: ${formattedValue} V"/*, displayed: false*/)              
-				state.V_L1_L2 = formattedValue
+				state.V_L1_L2 = newValue
 				[name: "V_L1_L2", value: formattedValue, unit: "V", descriptionText: "Volts: ${formattedValue} V"] // This makes mini tile appear in "Recently" log
                 //[name: "volts", value: newValue, unit: "V", descriptionText: "Volts: ${formattedValue} V"] //Likely can be deleted if correction above doesn't break anything
 			}
@@ -528,10 +529,11 @@ def zwaveEvent(physicalgraph.zwave.commands.meterv1.MeterReport cmd) {
 		else if (cmd.scale==1) {
 			newValue = Math.round( cmd.scaledMeterValue * 100) / 100
 			if (newValue > MAX_AMPS) { return }
+            if (newValue < 0) { return }				// Filter anything below zero, thus errors (To do: surely better way of doing this...)
 			formattedValue = String.format("%5.1f", newValue)
-			if (formattedValue != state.A_L1_L2) {
+			if (newValue != state.A_L1_L2) {
 				sendEvent(name: "A_L1_L2", value: formattedValue, unit: "", descriptionText: "Total Current: ${formattedValue} A"/*, displayed: false*/)              
-				state.A_L1_L2 = formattedValue
+				state.A_L1_L2 = newValue
                 [name: "A_L1_L2", value: formattedValue, unit: "A", descriptionText: "Total Current: ${formattedValue} A"] // This makes mini tile appear in "Recently" log
 				//[name: "amps", value: newValue, unit: "A", descriptionText: "Total Current: ${formattedValue} A"] //Likely can be deleted if correction above doesn't break anything
 			}
@@ -553,17 +555,18 @@ def zwaveEvent(physicalgraph.zwave.commands.multichannelv3.MultiChannelCmdEncap 
 				if (encapsulatedCommand.scale == 2 ) {
 					newValue = Math.round(encapsulatedCommand.scaledMeterValue)
                     if (newValue > MAX_WATTS) { return }											//Ignore values that are too high, definitely incorrect
+                    if (newValue < 0) { return }				// Filter anything below zero, thus errors (To do: surely better way of doing this...)
 					formattedValue = newValue as String
-					if (formattedValue != state.W_L1) {
-						state.W_L1 = formattedValue
+					if (newValue != state.W_L1) {
+						state.W_L1 = newValue
 						[name: "W_L1", value: formattedValue, unit: "", descriptionText: "L1 Power: ${formattedValue} W"]
 					}
 				} 
 				else if (encapsulatedCommand.scale == 0 ){
 					newValue = Math.round(encapsulatedCommand.scaledMeterValue * 100) / 100
 					formattedValue = String.format("%5.1f", newValue)
-					if (formattedValue != state.E_L1) {
-						state.E_L1 = formattedValue
+					if (newValue != state.E_L1) {
+						state.E_L1 = newValue
 						[name: "E_L1", value: formattedValue, unit: "", descriptionText: "L1 Energy: ${formattedValue} kWh"]
 					}
 				}
@@ -580,9 +583,10 @@ def zwaveEvent(physicalgraph.zwave.commands.multichannelv3.MultiChannelCmdEncap 
 				else if (encapsulatedCommand.scale == 5 ) {
 					newValue = Math.round(encapsulatedCommand.scaledMeterValue * 100) / 100
 					if (newValue > MAX_AMPS) { return }												//Ignore values that are too high, definitely incorrect
+                    if (newValue < 0) { return }				// Filter anything below zero, thus errors (To do: surely better way of doing this...)
 					formattedValue = String.format("%5.1f", newValue)
-					if (formattedValue != state.A_L1) {
-						state.A_L1 = formattedValue
+					if (newValue != state.A_L1) {
+						state.A_L1 = newValue
 						[name: "A_L1", value: formattedValue, unit: "", descriptionText: "L1 Current: ${formattedValue} A"]
 					}
 				}
@@ -602,34 +606,36 @@ def zwaveEvent(physicalgraph.zwave.commands.multichannelv3.MultiChannelCmdEncap 
 				if (encapsulatedCommand.scale == 2 ){
 					newValue = Math.round(encapsulatedCommand.scaledMeterValue)
 					if (newValue > MAX_WATTS ) { return }											//Ignore values that are too high, definitely incorrect
+                    if (newValue < 0) { return }				// Filter anything below zero, thus errors (To do: surely better way of doing this...)
 					formattedValue = newValue as String
-					if (formattedValue != state.W_L2) {
-						state.W_L2 = formattedValue
+					if (newValue != state.W_L2) {
+						state.W_L2 = newValue
 						[name: "W_L2", value: formattedValue, unit: "", descriptionText: "L2 Power: ${formattedValue} W"]
 					}
 				}
 				else if (encapsulatedCommand.scale == 0 ){
 					newValue = Math.round(encapsulatedCommand.scaledMeterValue * 100) / 100
 					formattedValue = String.format("%5.1f", newValue)
-					if (formattedValue != state.E_L2) {
-						state.E_L2 = formattedValue
+					if (newValue != state.E_L2) {
+						state.E_L2 = newValue
 						[name: "E_L2", value: formattedValue, unit: "", descriptionText: "L2 Energy: ${formattedValue} kWh"]
 					}
 				}
 				else if (encapsulatedCommand.scale == 1 ){
 					newValue = Math.round(encapsulatedCommand.scaledMeterValue * 100) / 100
 					formattedValue = String.format("%5.1f", newValue)
-					if (formattedValue != state.E_L2) {
-						state.E_L2 = formattedValue
+					if (newValue != state.E_L2) {
+						state.E_L2 = newValue
 						[name: "E_L2", value: formattedValue, unit: "", descriptionText: "L2 Energy: ${formattedValue} kVAh"]
 					}
 				}
 				else if (encapsulatedCommand.scale == 5 ){
 					newValue = Math.round(encapsulatedCommand.scaledMeterValue * 100) / 100
 					if (newValue > MAX_AMPS) { return }												//Ignore values that are too high, definitely incorrect
+                    if (newValue < 0) { return }				// Filter anything below zero, thus errors (To do: surely better way of doing this...)
 					formattedValue = String.format("%5.1f", newValue)
-					if (formattedValue != state.A_L2) {
-						state.A_L2 = formattedValue
+					if (newValue != state.A_L2) {
+						state.A_L2 = newValue
 						[name: "A_L2", value: formattedValue, unit: "", descriptionText: "L2 Current: ${formattedValue} A"]
 					}
 				}
@@ -725,30 +731,30 @@ def reset() {
 	if (settings.devDebugOnOff == "on") {log.debug "reset()"}
 
     // Reset state attributes
-    state.E_L1_L2 =	"0"
-    state.E_L1 =	"0"
-    state.E_L2 =	"0"
-    state.W_L1_L2 =	"0"
-    state.W_L1 =	"0"
-    state.W_L2 =	"0"
-    state.A_L1_L2 =	"0"
-    state.A_L1 =	"0"
-    state.A_L2 =	"0"
-    state.V_L1_L2 =	"0"
+    state.E_L1_L2 =	0
+    state.E_L1 =	0
+    state.E_L2 =	0
+    state.W_L1_L2 =	0
+    state.W_L1 =	0
+    state.W_L2 =	0
+    state.A_L1_L2 =	0
+    state.A_L1 =	0
+    state.A_L2 =	0
+    state.V_L1_L2 =	0
     //state.V_L1 =	"0"
     //state.V_L2 =	"0"
 	
     // Clear tiles
-	sendEvent(name: "E_L1_L2",		value: "", unit: "")
-    sendEvent(name: "E_L1",			value: "", unit: "")
-    sendEvent(name: "E_L2",			value: "", unit: "")
-    sendEvent(name: "W_L1_L2",		value: "", unit: "")
-    sendEvent(name: "W_L1",			value: "", unit: "")
-    sendEvent(name: "W_L2",			value: "", unit: "")
-    sendEvent(name: "A_L1_L2",		value: "", unit: "")
-    sendEvent(name: "A_L1",			value: "", unit: "")
-    sendEvent(name: "A_L2",			value: "", unit: "")
-    sendEvent(name: "V_L1_L2",		value: "", unit: "")
+	sendEvent(name: "E_L1_L2",		value: 0, unit: "")
+    sendEvent(name: "E_L1",			value: 0, unit: "")
+    sendEvent(name: "E_L2",			value: 0, unit: "")
+    sendEvent(name: "W_L1_L2",		value: 0, unit: "")
+    sendEvent(name: "W_L1",			value: 0, unit: "")
+    sendEvent(name: "W_L2",			value: 0, unit: "")
+    sendEvent(name: "A_L1_L2",		value: 0, unit: "")
+    sendEvent(name: "A_L1",			value: 0, unit: "")
+    sendEvent(name: "A_L2",			value: 0, unit: "")
+    sendEvent(name: "V_L1_L2",		value: 0, unit: "")
     //sendEvent(name: "V_L1",			value: "", unit: "")
     //sendEvent(name: "V_L2",			value: "", unit: "")
 	sendEvent(name: "resetDate",	value: "", unit: "")
