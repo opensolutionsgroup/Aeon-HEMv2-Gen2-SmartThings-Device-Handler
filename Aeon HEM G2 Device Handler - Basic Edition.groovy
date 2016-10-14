@@ -1,6 +1,6 @@
 /**
  *	Aeon Home Energy Meter v2 Gen2 Basic Edition
- *	Version: 0.9d
+ *	Version: 0.9e
  *
  *	Disclaimer: This WILL NOT work with Aeon's HEM Gen1 or Gen5 (latest version) as is intended to be used for HEMs
  *				installed on the typical 200A 240V split-phase US residential systems (Two 120V legs and a neutral -
@@ -35,14 +35,13 @@
  *			is of no use if not accurate.
  *
  *	To Do:	- Possibly add back some of the min/max functionality but I am not sure how useful that would be
- *			- Add preference to switch from kWh to kVAh
+ *			- Remove all kVAh support. Anybody use this for home energy tracking??
  *			- Once debug on/off is enabled, add more debugging to help troubleshoot issues
  *			- Check whether polling is needed, and enable if needed
  *			- Refresh and Configure button may not be necessary, evaluate and leave/remove as needed
  *			- Figure out why at times the values in the tile are pushed down... ST bug or programming issue? ST Android app bug from what I have read...
  *			- Why is tile text not resizing?
- *			- Tile color should go from green to yellow to red, rather than blue to red as values become to high or too low (only V).
- *
+ *			- Look into sendEvent and [name.... commands. Not sure they are all required.
  *
  *	History:
  * 
@@ -61,6 +60,10 @@
  *				- Few minor changes to help with debugging why the DTH stops reporting data on occasion. Research whether it is large W numebrs over 10k.
  *				- Added code to convert report group delay integers to hex
  *	2016-10-05	- Changed V/W/A/kWh variables from string to number (they are numbers after all!) in hopes it might fix the occasional freezing issue.
+ *	2016-10-13	- Fixed range check so tiles seem to update properly now. May have fixed freezing as well.
+ *				- Fixed date resetting feature
+ *				- Changed voltage range scale so that color changes will represent better the critical nature of the voltage swing. 114-126 is +-5% of 120 and is considered acceptable.
+ *				- 
  *				- 
  *
  *	Disclaimer 2:	I am NOT a developer. I learn as I go so please do NOT rely on this for anything critical. Use it and
@@ -107,8 +110,8 @@ metadata {
 		attribute "W_L2",			"number"		// Power from leg 2
 
 		attribute "V_L1_L2",		"number"		// Volts for leg 1 and 2 - voltage on L1 and L2 should always be the same, if not there is an issue!
-		//attribute "V_L1",			"string"		// Voltage on leg 1
-		//attribute "V_L2",			"string"		// Voltage on leg 2
+        attribute "V_L1",			"number"		// Volts for leg 1 - voltage on L1 and L2 should always be the same, if not there is an issue!
+        attribute "V_L2",			"number"		// Volts for leg 1 - voltage on L1 and L2 should always be the same, if not there is an issue!
 
 		attribute "A_L1_L2",		"number"		// Sum of amerage used on both legs, total amperage used by house
 		attribute "A_L1",			"number"		// Amperage for leg 1
@@ -275,11 +278,15 @@ metadata {
 				"V_L1_L2",
 				label: '${currentValue} V', 
 				backgroundColors:[
-					[value: 116, 	color: "#ef221a"],	// Red
-					[value: 118, 	color: "#ffcc00"],	// Yellow
+                	//Nominal voltage is 120V +-5% so 114 to 126 are within acceptable range. I set 115 to 125 so it is RED a bit sooner.
+                    //I did not spread the values out evenly as being on exactly 120V is not critical so making it always something other
+                    //than GREEN would reduce the user's focus on something is wrong when voltage is actually too high or low.
+                    //Grows YELLOW slowly and then RED faster with this spread.
+					[value: 115, 	color: "#ef221a"],	// Red
+					[value: 116, 	color: "#ffcc00"],	// Yellow
 					[value: 120, 	color: "#006600"],	// Green
-					[value: 122, 	color: "#ffcc00"],	// Yellow
-					[value: 124, 	color: "#ef221a"]	// Red
+					[value: 124, 	color: "#ffcc00"],	// Yellow
+					[value: 125, 	color: "#ef221a"]	// Red
 				]
 			)
 		}
@@ -407,13 +414,12 @@ metadata {
 	// Stuff disabled below is not fully functional yet or needed
     
 	preferences {
-		//input name: "energyMeasurement", type: "enum", title: "Energy meter measurement?", options: ["kWh", "kVAh"], description: "Select measurement type", required: true, displayDuringSetup: true
-		input name: "reportGroup1", type: "number", title: "Update A/V/W every x seconds", description: "Enter desired seconds", defaultValue: 60, displayDuringSetup: false
-		input name: "reportGroup2", type: "number", title: "Update kWh every x seconds", description: "Enter desired seconds", defaultValue: 78, displayDuringSetup: false
-		/*input name: "reportGroup3", type: "number", title: "Update A/V/W/KWH for L1/L2/Whole HEM (L1+L2) every x seconds", description: "Enter desired seconds", defaultValue: 78, displayDuringSetup: false*/ //Disabled configuration
-        input name: "vAdjustment", type: "number", title: "Voltage adjustment (+/-x)", description: "Enter adjustment amount +/-x", defaultValue: 0, displayDuringSetup: false
-		input "debugOnOff", type: "bool", title: "Debug log messages", description: "", defaultValue: "on", displayDuringSetup: false
-        input "devDebugOnOff", type: "bool", title: "Developer Debug log messages", description: "", defaultValue: "off", displayDuringSetup: false
+		input name: "reportGroup1",		type: "number", title: "Update A/V/W every x seconds", 	description: "Enter desired seconds", 			defaultValue: 60, 		displayDuringSetup: false
+		input name: "reportGroup2",		type: "number", title: "Update kWh every x seconds", 	description: "Enter desired seconds", 			defaultValue: 78, 		displayDuringSetup: false
+		/*input name: "reportGroup3", 	type: "number", title: "Update A/V/W/KWH for L1/L2/Whole HEM (L1+L2) every x seconds", description: "Enter desired seconds", defaultValue: 78, displayDuringSetup: false*/ //Disabled configuration
+        input name: "vAdjustment",		type: "number", title: "Voltage adjustment (+/-x)", 	description: "Enter adjustment amount +/-x",	defaultValue: 0,		displayDuringSetup: false
+		input name: "debugOnOff",		type: "enum", 	title: "Debug log messages", 			description: "", options: ["on", "off"],		defaultValue: "on",		displayDuringSetup: false
+        input name: "devDebugOnOff",	type: "enum", 	title: "Developer Debug log messages", 	description: "", options: ["on", "off"],		defaultValue: "off",	displayDuringSetup: false
 	}
 
 }
@@ -440,7 +446,9 @@ def installed() {
 def updated() {
 	if (settings.devDebugOnOff == "on") {log.debug "preferences updated with settings: $settings"}
 	configure()					// Send new configuration settings
-	refresh()					// Force new measurements and update display
+	newMeasurements()
+    refresh()					// Force new measurements and update display
+
 }
 
 	// ************************************************************************
@@ -484,15 +492,15 @@ def zwaveEvent(physicalgraph.zwave.commands.meterv1.MeterReport cmd) {
 			newValue = Math.round(cmd.scaledMeterValue * 100) / 100
 			formattedValue = String.format("%5.1f", newValue)
 			if (newValue != state.E_L1_L2) {
-				sendEvent(name: "E_L1_L2", value: formattedValue, unit: "", descriptionText: "Total Energy: ${formattedValue} kWh"/*, displayed: false*/)
 				state.E_L1_L2 = newValue
+                sendEvent(name: "E_L1_L2", value: formattedValue, unit: "", descriptionText: "Total Energy: ${formattedValue} kWh"/*, displayed: false*/)
 				[name: "E_L1_L2", value: formattedValue, unit: "kWh", descriptionText: "Total Energy: ${formattedValue} kWh"]
                 //[name: "energy", value: newValue, unit: "kWh", descriptionText: "Total Energy: ${formattedValue} kWh"]
 			}
 		} 
 		
 		else if (cmd.scale == 1) {
-        	if (settings.devDebugOnOff == "on") {log.debug "This section of code was commented out - Err1"}
+        	if (settings.devDebugOnOff == "on") {log.debug "This section of code was commented out - Err1 E_L1_L2 kVAh"}
 			/* Do nothing as the DTH is not handling kVA
             newValue = Math.round(cmd.scaledMeterValue * 100) / 100
 			formattedValue = String.format("%5.1f", newValue)
@@ -502,16 +510,21 @@ def zwaveEvent(physicalgraph.zwave.commands.meterv1.MeterReport cmd) {
 				[name: "energy", value: newValue, unit: "kVAh", descriptionText: "Total Energy: ${formattedValue} kVAh"]
 			}*/
 		}
-		else if (cmd.scale==2) {
+		else if (cmd.scale == 2) {
 			newValue = Math.round(cmd.scaledMeterValue)
 			formattedValue = newValue as String
-			if (newValue > MAX_WATTS) { return }		// Filter values that are too high, thus errors (To do: surely better way of doing this...)
-            if (newValue < 0) { return }				// Filter anything below zero, thus errors (To do: surely better way of doing this...)
-			if (newValue != state.W_L1_L2) {
-				sendEvent(name: "W_L1_L2", value: formattedValue, unit: "", descriptionText: "Total Power: ${formattedValue} W"/*, displayed: false*/)
-				state.W_L1_L2 = newValue
-				[name: "W_L1_L2", value: formattedValue, unit: "W", descriptionText: "Total Power: ${formattedValue} W"] // This makes mini tile appear in "Recently" log <<< not working, why??
-                //[name: "power", value: newValue, unit: "W", descriptionText: "Total Power: ${newValue} W"] //Likely can be deleted if correction above doesn't break anything
+            if (newValue < 0 || newValue > MAX_WATTS ) {
+            	//New value outside of acceptable range therefore not OK to display. Log value for debugging purposes.
+            	if (settings.debugOnOff == "on") {log.debug "ERROR: Out of range W_L1_L2 value: ${formattedValue} W"}
+            }
+            else {
+            		//New value within acceptable range therefore OK to display
+                    if (newValue != state.W_L1_L2) {
+						state.W_L1_L2 = newValue
+                        sendEvent(name: "W_L1_L2", value: formattedValue, unit: "", descriptionText: "Total Power: ${formattedValue} W"/*, displayed: false*/)
+						[name: "W_L1_L2", value: formattedValue, unit: "W", descriptionText: "Total Power: ${formattedValue} W"] // This makes mini tile appear in "Recently" log <<< not working, why??
+                		//[name: "power", value: newValue, unit: "W", descriptionText: "Total Power: ${newValue} W"] //Likely can be deleted if correction above doesn't break anything
+                	}
 			}
 		}
 	}
@@ -520,22 +533,27 @@ def zwaveEvent(physicalgraph.zwave.commands.meterv1.MeterReport cmd) {
 			newValue = Math.round(cmd.scaledMeterValue * 100) / 100 + vAdj		// Round, add +/- adjustment
 			formattedValue = String.format("%5.1f", newValue)
 			if (newValue != state.V_L1_L2) {
-				sendEvent(name: "V_L1_L2", value: formattedValue, unit: "", descriptionText: "Voltage: ${formattedValue} V"/*, displayed: false*/)              
 				state.V_L1_L2 = newValue
+                sendEvent(name: "V_L1_L2", value: formattedValue, unit: "", descriptionText: "Voltage: ${formattedValue} V"/*, displayed: false*/)              
 				[name: "V_L1_L2", value: formattedValue, unit: "V", descriptionText: "Volts: ${formattedValue} V"] // This makes mini tile appear in "Recently" log
                 //[name: "volts", value: newValue, unit: "V", descriptionText: "Volts: ${formattedValue} V"] //Likely can be deleted if correction above doesn't break anything
 			}
 		}
-		else if (cmd.scale==1) {
+		else if (cmd.scale == 1) {
 			newValue = Math.round( cmd.scaledMeterValue * 100) / 100
-			if (newValue > MAX_AMPS) { return }
-            if (newValue < 0) { return }				// Filter anything below zero, thus errors (To do: surely better way of doing this...)
-			formattedValue = String.format("%5.1f", newValue)
-			if (newValue != state.A_L1_L2) {
-				sendEvent(name: "A_L1_L2", value: formattedValue, unit: "", descriptionText: "Total Current: ${formattedValue} A"/*, displayed: false*/)              
-				state.A_L1_L2 = newValue
-                [name: "A_L1_L2", value: formattedValue, unit: "A", descriptionText: "Total Current: ${formattedValue} A"] // This makes mini tile appear in "Recently" log
-				//[name: "amps", value: newValue, unit: "A", descriptionText: "Total Current: ${formattedValue} A"] //Likely can be deleted if correction above doesn't break anything
+            formattedValue = String.format("%5.1f", newValue)
+			if (newValue < 0 || newValue > MAX_AMPS) {
+            	//New value outside of acceptable range therefore not OK to display. Log value for debugging purposes.
+				if (settings.debugOnOff == "on") {log.debug "ERROR: Out of range A_L1_L2 value: ${formattedValue} A"}
+            }
+            else {
+	            	//New value within acceptable range therefore OK to display
+					if (newValue != state.A_L1_L2) {
+						state.A_L1_L2 = newValue
+                        sendEvent(name: "A_L1_L2", value: formattedValue, unit: "", descriptionText: "Total Current: ${formattedValue} A"/*, displayed: false*/)              
+						[name: "A_L1_L2", value: formattedValue, unit: "A", descriptionText: "Total Current: ${formattedValue} A"] // This makes mini tile appear in "Recently" log
+						//[name: "amps", value: newValue, unit: "A", descriptionText: "Total Current: ${formattedValue} A"] //Likely can be deleted if correction above doesn't break anything           	
+                 	}
 			}
 		}
 	}           
@@ -546,7 +564,13 @@ def zwaveEvent(physicalgraph.zwave.commands.multichannelv3.MultiChannelCmdEncap 
 	def formattedValue
 	def MAX_AMPS = 220				// This exceeds typical residential split-phase panel amerage on purpose, cuts off values that are too high (fluke in reading)
 	def MAX_WATTS = 26400			// This exceeds typical residential split-phase panel power on purpose, cuts off values that are too high (fluke in reading)
-
+    def Integer vAdj = settings.vAdjustment as Integer
+    
+    // Just to be sure vAdj is 0 if preference was not set.
+    if (vAdj == null) {
+		vAdj = 0
+	}
+    
 	if (cmd.commandClass == 50) {    
 		def encapsulatedCommand = cmd.encapsulatedCommand([0x30: 1, 0x31: 1]) // can specify command class versions here like in zwave.parse
 		if (encapsulatedCommand) {
@@ -554,24 +578,30 @@ def zwaveEvent(physicalgraph.zwave.commands.multichannelv3.MultiChannelCmdEncap 
 			if (cmd.sourceEndPoint == 1) {
 				if (encapsulatedCommand.scale == 2 ) {
 					newValue = Math.round(encapsulatedCommand.scaledMeterValue)
-                    if (newValue > MAX_WATTS) { return }											//Ignore values that are too high, definitely incorrect
-                    if (newValue < 0) { return }				// Filter anything below zero, thus errors (To do: surely better way of doing this...)
-					formattedValue = newValue as String
-					if (newValue != state.W_L1) {
-						state.W_L1 = newValue
-						[name: "W_L1", value: formattedValue, unit: "", descriptionText: "L1 Power: ${formattedValue} W"]
-					}
+                    formattedValue = newValue as String
+					if (newValue < 0 || newValue > MAX_WATTS ) {
+                    	//New value outside of acceptable range therefore not OK to display. Log value for debugging purposes
+                    	if (settings.debugOnOff == "on") {log.debug "ERROR: Out of range W_L1 value: ${formattedValue} W"}
+                    }
+                    else {
+							//New value within acceptable range therefore OK to display
+							if (newValue != state.W_L1) {
+								state.W_L1 = newValue
+                                //sendEvent(name: "W_L1", value: formattedValue, unit: "", descriptionText: "L1 Power: ${formattedValue} W"/*, displayed: false*/)    << is this needed?
+								[name: "W_L1", value: formattedValue, unit: "", descriptionText: "L1 Power: ${formattedValue} W"]
+							}
+                    }
 				} 
 				else if (encapsulatedCommand.scale == 0 ){
-					newValue = Math.round(encapsulatedCommand.scaledMeterValue * 100) / 100
-					formattedValue = String.format("%5.1f", newValue)
-					if (newValue != state.E_L1) {
-						state.E_L1 = newValue
-						[name: "E_L1", value: formattedValue, unit: "", descriptionText: "L1 Energy: ${formattedValue} kWh"]
-					}
+						newValue = Math.round(encapsulatedCommand.scaledMeterValue * 100) / 100
+						formattedValue = String.format("%5.1f", newValue)
+						if (newValue != state.E_L1) {
+							state.E_L1 = newValue
+							[name: "E_L1", value: formattedValue, unit: "", descriptionText: "L1 Energy: ${formattedValue} kWh"]
+						}
 				}
 				else if (encapsulatedCommand.scale == 1 ){
-                	if (settings.devDebugOnOff == "on") {log.debug "This section of code was commented out - Err2"}
+                	if (settings.devDebugOnOff == "on") {log.debug "This section of code was commented out - Err2 E_L1 kVAh"}
 					/*
                     newValue = Math.round(encapsulatedCommand.scaledMeterValue * 100) / 100
 					formattedValue = String.format("%5.1f", newValue)
@@ -582,35 +612,44 @@ def zwaveEvent(physicalgraph.zwave.commands.multichannelv3.MultiChannelCmdEncap 
 				}
 				else if (encapsulatedCommand.scale == 5 ) {
 					newValue = Math.round(encapsulatedCommand.scaledMeterValue * 100) / 100
-					if (newValue > MAX_AMPS) { return }												//Ignore values that are too high, definitely incorrect
-                    if (newValue < 0) { return }				// Filter anything below zero, thus errors (To do: surely better way of doing this...)
-					formattedValue = String.format("%5.1f", newValue)
-					if (newValue != state.A_L1) {
-						state.A_L1 = newValue
-						[name: "A_L1", value: formattedValue, unit: "", descriptionText: "L1 Current: ${formattedValue} A"]
-					}
+                    formattedValue = String.format("%5.1f", newValue)
+					if (newValue < 0 || newValue > MAX_AMPS ) {
+                    	//New value outside of acceptable range therefore not OK to display. Log value for debugging purposes.
+                    	if (settings.debugOnOff == "on") {log.debug "ERROR: Out of range W_L1 value: ${formattedValue} A"}
+                    }
+                    else {
+                    		//New value within acceptable range therefore OK to display
+                            if (newValue != state.A_L1) {
+								state.A_L1 = newValue
+								[name: "A_L1", value: formattedValue, unit: "", descriptionText: "L1 Current: ${formattedValue} A"]
+							}
+                    }
 				}
 				else if (encapsulatedCommand.scale == 4 ){
-                	if (settings.devDebugOnOff == "on") {log.debug "This section of code was commented out - Err3"}
-                    /*
-					newValue = Math.round(encapsulatedCommand.scaledMeterValue * 100) / 100 + vAdj		// Round, add +/- adjustment
-					formattedValue = String.format("%5.1f", newValue)
-					if (formattedValue != state.V_L1) {
-						state.V_L1 = formattedValue
-						[name: "V_L1", value: formattedValue, unit: "", descriptionText: "L1 Voltage: ${formattedValue} V"]
-					}*/
-				}          
+                			//This section only updates the log, not the tiles
+                    		newValue = Math.round(encapsulatedCommand.scaledMeterValue * 100) / 100 + vAdj
+							formattedValue = String.format("%5.1f", newValue)
+                            if (formattedValue != state.V_L1) {
+								state.V_L1 = formattedValue
+								[name: "V_L1", value: formattedValue, unit: "", descriptionText: "L1 Voltage: ${formattedValue} V"]
+							}
+					}
 			}
 			// This section handles values from Clamp 2 (EndPoint 2)
 			else if (cmd.sourceEndPoint == 2) {
 				if (encapsulatedCommand.scale == 2 ){
 					newValue = Math.round(encapsulatedCommand.scaledMeterValue)
-					if (newValue > MAX_WATTS ) { return }											//Ignore values that are too high, definitely incorrect
-                    if (newValue < 0) { return }				// Filter anything below zero, thus errors (To do: surely better way of doing this...)
-					formattedValue = newValue as String
-					if (newValue != state.W_L2) {
-						state.W_L2 = newValue
-						[name: "W_L2", value: formattedValue, unit: "", descriptionText: "L2 Power: ${formattedValue} W"]
+					if (newValue < 0 || newValue > MAX_WATTS ) {
+                    	//New value outside of acceptable range therefore not OK to display. Log value for debugging purposes.
+                    	if (settings.debugOnOff == "on") {log.debug "ERROR: Out of range W_L2 value: ${formattedValue} W"}
+                    }
+                    else {
+							//New value within acceptable range therefore OK to display
+                            formattedValue = newValue as String
+							if (newValue != state.W_L2) {
+								state.W_L2 = newValue
+								[name: "W_L2", value: formattedValue, unit: "", descriptionText: "L2 Power: ${formattedValue} W"]
+                            }
 					}
 				}
 				else if (encapsulatedCommand.scale == 0 ){
@@ -622,32 +661,37 @@ def zwaveEvent(physicalgraph.zwave.commands.multichannelv3.MultiChannelCmdEncap 
 					}
 				}
 				else if (encapsulatedCommand.scale == 1 ){
-					newValue = Math.round(encapsulatedCommand.scaledMeterValue * 100) / 100
+                	if (settings.devDebugOnOff == "on") {log.debug "This section of code was commented out - Err E_L2 kVAh"}
+					/*
+                    newValue = Math.round(encapsulatedCommand.scaledMeterValue * 100) / 100
 					formattedValue = String.format("%5.1f", newValue)
 					if (newValue != state.E_L2) {
 						state.E_L2 = newValue
 						[name: "E_L2", value: formattedValue, unit: "", descriptionText: "L2 Energy: ${formattedValue} kVAh"]
-					}
+					}*/
 				}
 				else if (encapsulatedCommand.scale == 5 ){
 					newValue = Math.round(encapsulatedCommand.scaledMeterValue * 100) / 100
-					if (newValue > MAX_AMPS) { return }												//Ignore values that are too high, definitely incorrect
-                    if (newValue < 0) { return }				// Filter anything below zero, thus errors (To do: surely better way of doing this...)
-					formattedValue = String.format("%5.1f", newValue)
-					if (newValue != state.A_L2) {
-						state.A_L2 = newValue
-						[name: "A_L2", value: formattedValue, unit: "", descriptionText: "L2 Current: ${formattedValue} A"]
+                    formattedValue = String.format("%5.1f", newValue)
+					if (newValue < 0 || newValue > MAX_AMPS ) {
+                    	//New value outside of acceptable range therefore not OK to display. Log value for debugging purposes.
+                    	if (settings.debugOnOff == "on") {log.debug "ERROR: Out of range A_L2 value: ${formattedValue} A"}
+                    }
+                    else {
+                    		//New value within acceptable range therefore OK to display
+							if (newValue != state.A_L2) {
+								state.A_L2 = newValue
+								[name: "A_L2", value: formattedValue, unit: "", descriptionText: "L2 Current: ${formattedValue} A"]
+                            }
 					}
 				}
 				else if (encapsulatedCommand.scale == 4 ){
-                	if (settings.devDebugOnOff == "on") {log.debug "This section of code was commented out - Err1"}
-                    /*
-					newValue = Math.round(encapsulatedCommand.scaledMeterValue * 100) / 100 + vAdj		// Round, add +/- adjustment
+                    newValue = Math.round(encapsulatedCommand.scaledMeterValue * 100) / 100 + vAdj
 					formattedValue = String.format("%5.1f", newValue)
 					if (formattedValue != state.V_L2) {
 						state.V_L2 = formattedValue
 						[name: "V_L2", value: formattedValue, unit: "", descriptionText: "L2 Voltage: ${formattedValue} V"]
-					}*/
+					}
 				}
 			}
 		}
@@ -677,23 +721,21 @@ def poll() {
 */
 
 def updateDisplay() {
-	if (settings.devDebugOnOff == "on") {log.debug "updateDisplay() - E_L1_L2: ${state.E_L1_L2} kWh"}	//change to any variable
 	
-	sendEvent(name: "V_L1_L2", value: state.V_L1_L2, unit: "")    
-	//sendEvent(name: "V_L1", value: state.V_L1, unit: "")
-	//sendEvent(name: "V_L2", value: state.V_L2, unit: "")
-
+    if (settings.devDebugOnOff == "on") {log.debug "updateDisplay()"} // - E_L1_L2: ${state.E_L1_L2} kWh"}	//change to any variable
+	
+    sendEvent(name: "V_L1_L2", value: state.V_L1_L2, unit: "")    
 	sendEvent(name: "W_L1_L2", value: state.W_L1_L2, unit: "")
-	sendEvent(name: "W_L1", value: state.W_L1, unit: "")     
-	sendEvent(name: "W_L2", value: state.W_L2, unit: "")
 
-	sendEvent(name: "A_L1_L2", value: state.A_L1_L2, unit: "")
-	sendEvent(name: "A_L1", value: state.A_L1, unit: "")    
-	sendEvent(name: "A_L2", value: state.A_L2, unit: "")
+	sendEvent(name: "W_L1", value: state.W_L1, unit: "")
+    sendEvent(name: "W_L2", value: state.W_L2, unit: "")
 
-	sendEvent(name: "E_L1_L2", value: state.E_L1_L2, unit: "")
-	sendEvent(name: "E_L1", value: state.E_L1, unit: "")
-	sendEvent(name: "E_L2", value: state.E_L2, unit: "")
+    sendEvent(name: "A_L1_L2", value: state.A_L1_L2, unit: "")
+    sendEvent(name: "A_L1", value: state.A_L1, unit: "")
+    sendEvent(name: "A_L2", value: state.A_L2, unit: "")
+    sendEvent(name: "E_L1_L2", value: state.E_L1_L2, unit: "")
+    sendEvent(name: "E_L1", value: state.E_L1, unit: "")
+    sendEvent(name: "E_L2", value: state.E_L2, unit: "")
 
 	sendEvent(name: "resetDate", value: state.resetDate, unit: "")	
 
@@ -704,16 +746,9 @@ def updateDisplay() {
 	// ************************************************************************
 
 def newMeasurements() {
-
-	def measurementType = 0
-	/*
-	if(settings.energyMeasurement == "kWh") {measurementType = 0}
-	else
-	{measurementType = 1}
-	*/
       
 	def cmd = delayBetween( [
-		zwave.meterV2.meterGet(scale: measurementType).format(),	// 0 = Requests kWh values; 1 = Requests kVAh values
+		zwave.meterV2.meterGet(scale: 0).format(),					// 0 = Requests kWh values; 1 = Requests kVAh values
 		zwave.meterV2.meterGet(scale: 2).format(),					// Requests W values
 		zwave.meterV2.meterGet(scale: 4).format(),					// Requests V values
 		zwave.meterV2.meterGet(scale: 5).format()					// Requests A values
@@ -741,9 +776,7 @@ def reset() {
     state.A_L1 =	0
     state.A_L2 =	0
     state.V_L1_L2 =	0
-    //state.V_L1 =	"0"
-    //state.V_L2 =	"0"
-	
+    
     // Clear tiles
 	sendEvent(name: "E_L1_L2",		value: 0, unit: "")
     sendEvent(name: "E_L1",			value: 0, unit: "")
@@ -755,9 +788,8 @@ def reset() {
     sendEvent(name: "A_L1",			value: 0, unit: "")
     sendEvent(name: "A_L2",			value: 0, unit: "")
     sendEvent(name: "V_L1_L2",		value: 0, unit: "")
-    //sendEvent(name: "V_L1",			value: "", unit: "")
-    //sendEvent(name: "V_L2",			value: "", unit: "")
-	sendEvent(name: "resetDate",	value: "", unit: "")
+
+	sendEvent(name: "resetDate",	value: null, unit: "")
     
     configure()											// Send configuration parameters
     
@@ -773,13 +805,21 @@ def resetCtr() {
     def dateString = new Date().format("dd-MMM-yy", location.timeZone)
     //def timeString = new Date().format("HH:MM", location.timeZone)    // Leaving this here just in case I want to add time as well
 
-	state.resetDate = dateString
+    // Reset state attributes
+    state.E_L1_L2 =	0
+    state.E_L1 =	0
+    state.E_L2 =	0
+    state.resetDate = dateString
     
-    return [
-    zwave.meterV2.meterReset().format()					// Reset all values, without return it was not actually executing... is it now skipping updateDisplay()?
-    ]
+    // Clear tiles
+	sendEvent(name: "E_L1_L2",		value: 0, unit: "")
+    sendEvent(name: "E_L1",			value: 0, unit: "")
+    sendEvent(name: "E_L2",			value: 0, unit: "")	
 
-    updateDisplay()
+    sendEvent(name: "resetDate", value: state.resetDate, unit: "")	
+    //updateDisplay()
+    
+    return zwave.meterV2.meterReset().format()					// Reset all meter values not state values, without return it was not actually executing... is it now skipping updateDisplay()?
 }
 
 
@@ -812,9 +852,9 @@ def configure() {
 		rg3Delay = 120
 	}
     
-    String str_rg1Delay = Integer.toHexString(rg1Delay)
-    String str_rg2Delay = Integer.toHexString(rg2Delay)
-    String str_rg3Delay = Integer.toHexString(rg3Delay)
+    //def str_rg1Delay = Integer.toHexString(rg1Delay)
+    //def str_rg2Delay = Integer.toHexString(rg2Delay)
+    //def str_rg3Delay = Integer.toHexString(rg3Delay)
     
 
     
@@ -843,18 +883,18 @@ def configure() {
 		//zwave.configurationV1.configurationSet(parameterNumber: 10, size: 1, scaledConfigurationValue: 1).format(),			// Or by 5% (L2)
         
 		//zwave.configurationV1.configurationSet(parameterNumber: 100, size: 1, scaledConfigurationValue: 0).format(),			// reset to default 101 to 103
-		zwave.configurationV1.configurationSet(parameterNumber: 101, size: 4, scaledConfigurationValue: 1770255).format(),  	// Report Group 1: A/V/W for L1/L2/Whole HEM (L1+L2)
+		zwave.configurationV1.configurationSet(parameterNumber: 101, size: 4, scaledConfigurationValue: 1776399).format(),  	// Report Group 1: A/V/W/KWH for L1/L2/Whole HEM (L1+L2)
 		zwave.configurationV1.configurationSet(parameterNumber: 102, size: 4, scaledConfigurationValue: 6145).format(),			// Report Group 2: KWH for L1/L2/Whole HEM (L1+L2)
 		//zwave.configurationV1.configurationSet(parameterNumber: 103, size: 4, scaledConfigurationValue: 1776399).format(),	// Report Group 3: A/V/W/KWH for L1/L2/Whole HEM (L1+L2)
         zwave.configurationV1.configurationSet(parameterNumber: 103, size: 4, scaledConfigurationValue: 0).format(),			// Report Group 3: A/V/W/KWH for L1/L2/Whole HEM (L1+L2)
-		zwave.configurationV1.configurationSet(parameterNumber: 111, size: 4, scaledConfigurationValue: str_rg1Delay).format(),	// Send Report Group 1 every x seconds
+		zwave.configurationV1.configurationSet(parameterNumber: 111, size: 4, scaledConfigurationValue: rg1Delay).format(),		// Send Report Group 1 every x seconds
 		//zwave.configurationV1.configurationSet(parameterNumber: 111, size: 4, scaledConfigurationValue: 30).format(), 		// Send Report Group 1 every 30 seconds
-		zwave.configurationV1.configurationSet(parameterNumber: 112, size: 4, scaledConfigurationValue: str_rg2Delay).format(),	// Send Report Group 2 every x seconds
+		zwave.configurationV1.configurationSet(parameterNumber: 112, size: 4, scaledConfigurationValue: rg2Delay).format(),		// Send Report Group 2 every x seconds
 		//zwave.configurationV1.configurationSet(parameterNumber: 112, size: 4, scaledConfigurationValue: 60).format(), 		// Send Report Group 2 every 60 seconds
-		zwave.configurationV1.configurationSet(parameterNumber: 113, size: 4, scaledConfigurationValue: str_rg3Delay).format() 	// Send Report Group 3 every x seconds
+		zwave.configurationV1.configurationSet(parameterNumber: 113, size: 4, scaledConfigurationValue: rg3Delay).format() 		// Send Report Group 3 every x seconds
         //zwave.configurationV1.configurationSet(parameterNumber: 113, size: 4, scaledConfigurationValue: 30).format() 			// Send Report Group 3 every 30 seconds
 	], 2000)																													// 2000ms delay between commands
-	if (settings.devDebugOnOff == "on") {log.debug "Configuration: ${cmd}"}
+	if (settings.debugOnOff == "on") {log.debug "Configuration: ${cmd}"}
 
 	cmd
 }
